@@ -24,9 +24,59 @@ namespace RackMonitor.ViewModels
                 {
                     _numberOfUnits = value;
                     OnPropertyChanged(nameof(NumberOfUnits));
+                    ExecuteUpdateRackSize(NumberOfUnits);
                 }
             }
         }
+
+        private bool _isSettingsPanelOpen = true;
+        public bool IsSettingsPanelOpen
+        {
+            get => _isSettingsPanelOpen;
+            set
+            {
+                Debug.WriteLine("In Toggle");
+                if (_isSettingsPanelOpen != value)
+                {
+                    _isSettingsPanelOpen = value;
+                    OnPropertyChanged(nameof(IsSettingsPanelOpen));
+                }
+            }
+        }
+        private DeviceDetailsViewModel _selectedDeviceDetails;
+        public DeviceDetailsViewModel SelectedDeviceDetails
+        {
+            get => _selectedDeviceDetails;
+            set
+            {
+                if (_selectedDeviceDetails != value)
+                {
+                    _selectedDeviceDetails = value;
+                    OnPropertyChanged(nameof(SelectedDeviceDetails));
+                }
+            }
+        }
+
+        // NEW: Property to control the visibility of the details panel
+        private bool _isDetailsPanelOpen;
+        public bool IsDetailsPanelOpen
+        {
+            get => _isDetailsPanelOpen;
+            set
+            {
+                if (_isDetailsPanelOpen != value)
+                {
+                    _isDetailsPanelOpen = value;
+                    OnPropertyChanged(nameof(IsDetailsPanelOpen));
+                    // If closing details, clear the selected device VM
+                    if (!value)
+                    {
+                        SelectedDeviceDetails = null;
+                    }
+                }
+            }
+        }
+
 
         private bool _isPingServiceRunning = true;
         public bool IsPingServiceRunning
@@ -60,6 +110,9 @@ namespace RackMonitor.ViewModels
         public ICommand GetAllIPsCommand { get; }
         public ICommand ToggleWoLServiceCommand { get; }
         public ICommand TogglePingServiceCommand { get; }
+        public ICommand ToggleSettingsPanelCommand { get; }
+        public ICommand CloseDetailsPanelCommand { get; }
+
         public EventHandler<PingServiceToggledEventArgs> PingToggled;
         public EventHandler<WoLServiceToggledEventArgs> WoLToggled;
 
@@ -77,6 +130,8 @@ namespace RackMonitor.ViewModels
             GetAllIPsCommand = new RelayCommand(ExecuteGetAllIPs);
             ToggleWoLServiceCommand = new RelayCommand(ExecuteToggleWoL);
             TogglePingServiceCommand = new RelayCommand(ExecuteTogglePing);
+            ToggleSettingsPanelCommand = new RelayCommand(ExecuteToggleSettingsPanel);
+            CloseDetailsPanelCommand = new RelayCommand(ExecuteCloseDetailsPanel);
 
             //Create the initial rack
             //_repository.UpdateRackSize(NumberOfUnits);
@@ -166,26 +221,41 @@ namespace RackMonitor.ViewModels
 
             _repository.ChangeDeviceType(slot, deviceType);
         }
+        private void ExecuteToggleSettingsPanel(object parameter)
+        {
+            IsSettingsPanelOpen = !IsSettingsPanelOpen;
+        }
 
         private void ExecuteShowDeviceDetails(object parameter)
         {
             if (parameter is SlotViewModel slot && slot.Device != null)
             {
+                // Create the ViewModel for the selected device
                 var detailsViewModel = new DeviceDetailsViewModel(slot.Device);
+
+                // Hook up the Saved event to trigger repository save and check
                 detailsViewModel.Saved += () =>
                 {
                     _repository.SaveState();
                     _repository.CheckDeviceState(slot.Device);
+                    // Optionally refresh properties in the main list view if needed
+                    // OnPropertyChanged(nameof(RackUnits)); // Might be too broad
                 };
 
-                var detailsWindow = new DeviceDetailsWindow
-                {
-                    DataContext = detailsViewModel
-                };
-                detailsWindow.ShowDialog();
+                // Set the ViewModel for the panel
+                SelectedDeviceDetails = detailsViewModel;
+
+                // Open the panel
+                IsDetailsPanelOpen = true;
+
+                // Removed code that showed a separate window
+            }
+            else // If clicking an empty slot or invalid parameter, ensure panel closes
+            {
+                IsDetailsPanelOpen = false;
             }
         }
-        
+
         private void ExecuteToggleWoL(object parameter)
         {
             WoLToggled?.Invoke(this, new WoLServiceToggledEventArgs(IsWoLServiceRunning));
@@ -194,6 +264,13 @@ namespace RackMonitor.ViewModels
         {
             PingToggled?.Invoke(this, new PingServiceToggledEventArgs(IsPingServiceRunning));
         }
+        private void ExecuteCloseDetailsPanel(object parameter)
+        {
+            IsDetailsPanelOpen = false;
+            // SelectedDeviceDetails is automatically cleared by the IsDetailsPanelOpen setter
+        }
+
+
 
         #endregion
 
