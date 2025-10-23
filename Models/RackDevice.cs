@@ -1,4 +1,5 @@
-﻿using System;
+﻿using RackMonitor.Attributes;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.DirectoryServices.ActiveDirectory;
@@ -11,6 +12,7 @@ namespace RackMonitor.Models
     public abstract class RackDevice : INotifyPropertyChanged
     {
         private string _deviceType;
+        [PropertyVisibility(false)]
         public string DeviceType
         {
             get => _deviceType;
@@ -24,6 +26,7 @@ namespace RackMonitor.Models
             }
         }
         private string _name;
+        [Order(0)]
         public string Name
         {
             get => _name;
@@ -37,6 +40,9 @@ namespace RackMonitor.Models
             }
         }
         private IPAddressInfo _ipAddressInfo = new IPAddressInfo();
+        [Order(5)]
+        [FriendlyName("IP Address")]
+        [TabCategory("Network")]
         public IPAddressInfo IPAddressInfo
         {
             get => _ipAddressInfo;
@@ -51,6 +57,7 @@ namespace RackMonitor.Models
         }
 
         private bool _connected;
+        [PropertyVisibility(false)]
         public bool Connected
         {
             get => _connected;
@@ -65,6 +72,7 @@ namespace RackMonitor.Models
         }
 
         private bool _connected2;
+        [PropertyVisibility(false)]
         public bool Connected2
         {
             get => _connected2;
@@ -78,6 +86,8 @@ namespace RackMonitor.Models
             }
         }
         private bool _ping;
+        [Order(10)]
+        [TabCategory("Network")]
         public bool Ping
         {
             get => _ping;
@@ -91,6 +101,9 @@ namespace RackMonitor.Models
             }
         }
         private bool _secondIPAddress;
+        [Order(15)]
+        [FriendlyName("Enable 2nd IP")]
+        [TabCategory("Network")]
         public bool SecondIPAddress
         {
             get => _secondIPAddress;
@@ -103,7 +116,10 @@ namespace RackMonitor.Models
                 }
             }
         }
-                private IPAddressInfo _ipAddressInfo2 = new IPAddressInfo();
+        private IPAddressInfo _ipAddressInfo2 = new IPAddressInfo();
+        [Order(20)]
+        [FriendlyName("IP Address 2")]
+        [TabCategory("Network")]
         public IPAddressInfo IPAddressInfo2
         {
             get => _ipAddressInfo2;

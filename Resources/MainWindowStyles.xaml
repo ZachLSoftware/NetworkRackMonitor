@@ -1,0 +1,68 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    
+    
+    <Style x:Key="SlotItemStyle" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource SlotBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource SlotBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Margin" Value="2"/>
+        <Setter Property="MinHeight" Value="50"/>
+        <Setter Property="CornerRadius" Value="3"/>
+        <Setter Property="TextElement.Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+    </Style>
+
+    <Style x:Key="TogglePingMenuItemStyle" TargetType="MenuItem">
+        <Setter Property="Header" Value="Enable Ping Service"/>
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsPingServiceRunning}" Value="True">
+                <Setter Property="Header" Value="Disable Ping Service"/>
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+    <Style x:Key="ToggleWoLMenuItemStyle" TargetType="MenuItem">
+        <Setter Property="Header" Value="Enable WoL Service"/>
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsWoLServiceRunning}" Value="True">
+                <Setter Property="Header" Value="Disable WoL Service"/>
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Style for the small toggle buttons -->
+    <Style x:Key="BaseToggleStyle" TargetType="Button">
+        <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Width" Value="25"/>
+        <Setter Property="Height" Value="25"/>
+        <Setter Property="VerticalAlignment" Value="Top"/>
+        <Setter Property="HorizontalAlignment" Value="Right"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="Command" Value="{Binding DataContext.ToggleSettingsPanelCommand, ElementName=RackWindow}"/>
+    </Style>
+
+    <!-- Style for the "Close" button (visible when panel is open) -->
+    <Style x:Key="CloseSettingsButtonStyle" TargetType="Button" BasedOn="{StaticResource BaseToggleStyle}">
+        <Setter Property="Content" Value="&lt;"/>
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding DataContext.IsSettingsPanelOpen, ElementName=RackWindow}" Value="False">
+                <Setter Property="Visibility" Value="Collapsed"/>
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Style for the "Open" button (visible when panel is closed) -->
+    <Style x:Key="OpenSettingsButtonStyle" TargetType="Button" BasedOn="{StaticResource BaseToggleStyle}">
+        <Setter Property="Content" Value="&gt;"/>
+        <Setter Property="HorizontalAlignment" Value="Left"/>
+        <Setter Property="Margin" Value="5,0,0,0"/>
+        <Setter Property="Visibility" Value="Collapsed"/>
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding DataContext.IsSettingsPanelOpen, ElementName=RackWindow}" Value="False">
+                <Setter Property="Visibility" Value="Visible"/>
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+</ResourceDictionary>

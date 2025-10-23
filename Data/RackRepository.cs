@@ -103,6 +103,7 @@ namespace RackMonitor.Data
                 SecondIPAddress = device.SecondIPAddress,
                 MacAddress = (device as ComputerDevice)?.MacAddress,
                 IsWoLEnabled = (device as ComputerDevice)?.IsWolEnabled ?? false,
+                AdderModel = (device as AdderDevice)?.Model ?? "None",
                 Ping = device.Ping
             };
 
@@ -138,6 +139,10 @@ namespace RackMonitor.Data
             {
                 (device as ComputerDevice).MacAddress = dto.MacAddress;
                 (device as ComputerDevice).IsWolEnabled = dto.IsWoLEnabled;
+            }
+            if (device is AdderDevice)
+            {
+                (device as AdderDevice).Model = dto.AdderModel;
             }
             return device;
         }

@@ -35,7 +35,7 @@ namespace RackMonitor.ViewModels
             get => _isSettingsPanelOpen;
             set
             {
-                Debug.WriteLine("In Toggle");
+                
                 if (_isSettingsPanelOpen != value)
                 {
                     _isSettingsPanelOpen = value;
@@ -262,6 +262,7 @@ namespace RackMonitor.ViewModels
         }
         private void ExecuteTogglePing(object parameter)
         {
+            Debug.WriteLine("Toggling");
             PingToggled?.Invoke(this, new PingServiceToggledEventArgs(IsPingServiceRunning));
         }
         private void ExecuteCloseDetailsPanel(object parameter)
@@ -273,6 +274,7 @@ namespace RackMonitor.ViewModels
 
 
         #endregion
+
 
 
         public event PropertyChangedEventHandler PropertyChanged;

@@ -76,7 +76,8 @@
         </Border>
 
         <!-- Dynamic Properties Section now uses the ItemTemplateSelector -->
-        <ItemsControl Grid.Row="1" ItemsSource="{Binding DeviceProperties}" Margin="0,10,0,0">
+        
+        <ItemsControl ItemsSource="{Binding DeviceProperties}" Margin="0,10,0,0">
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
                     <Grid Margin="0,3" Visibility="{Binding IsVisible, Converter={StaticResource BoolToVisibleConverter}}">

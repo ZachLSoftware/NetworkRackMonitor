@@ -1,4 +1,5 @@
-﻿using RackMonitor.Models;
+﻿using RackMonitor.Extensions;
+using RackMonitor.Models;
 using RackMonitor.Services;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -16,6 +17,7 @@ namespace RackMonitor.ViewModels
         public RackDevice CurrentDevice { get; }
         public event Action Saved;
         public ObservableCollection<DevicePropertyViewModel> DeviceProperties { get; } = new ObservableCollection<DevicePropertyViewModel>();
+        public List<string> AvailableAdderModels { get; } = new List<string> { "Other", "ASP001", "ALIF4000T", "ALIF2100T" };
 
         public ICommand SaveCommand { get; }
 
@@ -41,15 +43,14 @@ namespace RackMonitor.ViewModels
         private void PopulateProperties(RackDevice device)
         {
             DeviceProperties.Clear();
+            Type type = device.GetType();
 
             // Get all public, instance properties from the device object.
-            var properties = device.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
+            var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance).Where(x => x.GetPropertyVisibility()).OrderBy(p => p.GetOrder());
 
             foreach (var propInfo in properties)
             {
-                // We don't want to edit the DeviceType, and we can ignore the base class properties.
-                if (!hiddenFields.Contains(propInfo.Name))
-                {
+
                     if(propInfo.PropertyType == typeof(IPAddressInfo) && propInfo.CanRead && propInfo.CanWrite)
                     {
                         {
@@ -57,16 +58,16 @@ namespace RackMonitor.ViewModels
                             if (ipInfo != null)
                             {
 
-                                DeviceProperties.Add(new DevicePropertyViewModel(propInfo, "IP Address", ipInfo.Address, propInfo.Name == "IPAddressInfo2" ? device.SecondIPAddress : true));
+                                DeviceProperties.Add(new DevicePropertyViewModel(propInfo, "IP Address", ipInfo.Address, propInfo.Name == "IPAddressInfo2" ? device.SecondIPAddress : true, propInfo.GetTabCategory()));
                             }
 
                         }
                     }
                     else if (propInfo.CanRead && propInfo.CanWrite)
                     {
-                        DeviceProperties.Add(new DevicePropertyViewModel(device, propInfo));
+                        DeviceProperties.Add(new DevicePropertyViewModel(device, propInfo, propInfo.GetTabCategory()));
                     }
-                }
+                
 
                 
             }

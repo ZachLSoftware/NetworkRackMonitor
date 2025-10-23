@@ -32,7 +32,8 @@ namespace RackMonitor.UserControls
                 typeof(ToggleButton),           // Owner class
                 new FrameworkPropertyMetadata(
                     false,                      // Default value
-                    FrameworkPropertyMetadataOptions.BindsTwoWayByDefault // Enable TwoWay binding
+                    FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
+                    OnIsOnChanged
                 )
             );
 
@@ -41,6 +42,39 @@ namespace RackMonitor.UserControls
         {
             get { return (bool)GetValue(IsOnProperty); }
             set { SetValue(IsOnProperty, value); }
+        }
+
+        public static readonly DependencyProperty CommandProperty =
+        DependencyProperty.Register("Command", typeof(ICommand), typeof(ToggleButton), new PropertyMetadata(null));
+
+        public ICommand Command
+        {
+            get { return (ICommand)GetValue(CommandProperty); }
+            set { SetValue(CommandProperty, value); }
+        }
+
+        
+        public static readonly DependencyProperty CommandParameterProperty =
+            DependencyProperty.Register("CommandParameter", typeof(object), typeof(ToggleButton), new PropertyMetadata(null));
+
+        public object CommandParameter
+        {
+            get { return (object)GetValue(CommandParameterProperty); }
+            set { SetValue(CommandParameterProperty, value); }
+        }
+
+        private static void OnIsOnChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is ToggleButton toggleButton && toggleButton.Command != null)
+            {
+                // Use CommandParameter if provided, otherwise pass the new boolean state (e.NewValue)
+                object parameter = toggleButton.CommandParameter ?? e.NewValue;
+
+                if (toggleButton.Command.CanExecute(parameter))
+                {
+                    toggleButton.Command.Execute(parameter);
+                }
+            }
         }
     }
 }

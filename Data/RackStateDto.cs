@@ -48,6 +48,7 @@ namespace RackMonitor.Data
         public string MacAddress { get; set; }
 
         // Specific properties
+        public string AdderModel { get; set; }
         public string OperatingSystem { get; set; }
         public int PortCount { get; set; }
         public bool IsWoLEnabled { get; set; }

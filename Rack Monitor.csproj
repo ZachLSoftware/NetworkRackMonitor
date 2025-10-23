@@ -10,7 +10,31 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.5.3" />
+    <None Remove="Assets\Icons\ALIF1002.png" />
+    <None Remove="Assets\Icons\ALIF1100T.png" />
+    <None Remove="Assets\Icons\ALIF2100R.png" />
+    <None Remove="Assets\Icons\ALIF2100T.png" />
+    <None Remove="Assets\Icons\ALIF3000R.png" />
+    <None Remove="Assets\Icons\ALIF4000R.png" />
+    <None Remove="Assets\Icons\ALIF4000T.png" />
+    <None Remove="Assets\Icons\ASP001.png" />
+    <None Remove="Assets\Icons\PC.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.5.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\Icons\ALIF1002.png" />
+    <Resource Include="Assets\Icons\ALIF1100T.png" />
+    <Resource Include="Assets\Icons\ALIF2100R.png" />
+    <Resource Include="Assets\Icons\ALIF2100T.png" />
+    <Resource Include="Assets\Icons\ALIF3000R.png" />
+    <Resource Include="Assets\Icons\ALIF4000R.png" />
+    <Resource Include="Assets\Icons\ALIF4000T.png" />
+    <Resource Include="Assets\Icons\ASP001.png" />
+    <Resource Include="Assets\Icons\PC.png" />
   </ItemGroup>
 
 </Project>

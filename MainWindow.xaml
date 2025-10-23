@@ -10,322 +10,19 @@
         Title="Rack Monitor" Height="900" Width="1500"
         x:Name="RackWindow">
     <Window.Resources>
-        <!-- ... (Keep all existing resources: Colors, Styles, Converters, Templates) ... -->
-        <!-- Prototype Color Palette -->
-        <SolidColorBrush x:Key="AppBackgroundBrush" Color="#FF0d0d0d"/>
-        <SolidColorBrush x:Key="PanelBackgroundBrush" Color="#FF1a1a1a"/>
-        <SolidColorBrush x:Key="SlotBackgroundBrush" Color="#FF2a2a2a"/>
-        <SolidColorBrush x:Key="BorderBrush" Color="#FF333333"/>
-        <SolidColorBrush x:Key="SlotBorderBrush" Color="#FF3a3a3a"/>
-        <SolidColorBrush x:Key="TextPrimaryBrush" Color="#FFf0f0f0"/>
-        <SolidColorBrush x:Key="TextSecondaryBrush" Color="#FF999999"/>
-        <SolidColorBrush x:Key="AccentBrush" Color="#FF448aff"/>
-        <SolidColorBrush x:Key="StatusOnlineBrush" Color="#FF00e676"/>
-        <SolidColorBrush x:Key="StatusOfflineBrush" Color="#FFff3d00"/>
-        <SolidColorBrush x:Key="StatusDisabledBrush" Color="#FF444444"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Resources/MainWindowStyles.xaml"/>
+                <ResourceDictionary Source="/Resources/RackUnitDataTemplate.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
 
-        <!-- Style for a single slot -->
-        <Style x:Key="SlotItemStyle" TargetType="Border">
-            <Setter Property="Background" Value="{StaticResource SlotBackgroundBrush}"/>
-            <Setter Property="BorderBrush" Value="{StaticResource SlotBorderBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Margin" Value="2"/>
-            <Setter Property="MinHeight" Value="50"/>
-            <Setter Property="CornerRadius" Value="3"/>
-            <Setter Property="TextElement.Foreground" Value="{StaticResource TextPrimaryBrush}"/>
-        </Style>
-
-        <!-- Use the static instance of the converter -->
-        <!-- <local:TupleConverter x:Key="TupleConverter" /> -->
-        <ControlTemplate x:Key="ContentOnlyTemplate" TargetType="{x:Type Button}">
-            <ContentPresenter />
-        </ControlTemplate>
-
-        <!-- CONTEXT MENU FOR A ROW (to change layout) - Updated -->
-        <ContextMenu x:Key="RowContextMenu">
-            <MenuItem Header="Add Slot"
-                      Command="{Binding PlacementTarget.Tag.AddSlotCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                      CommandParameter="{Binding Path=.}"/>
-            <MenuItem Header="Re-combine to Single"
-                      Command="{Binding PlacementTarget.Tag.MergeUnitCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                      CommandParameter="{Binding Path=.}"/>
-        </ContextMenu>
-
-        <!-- CONTEXT MENU FOR A SLOT (to add a device) -->
-        <ContextMenu x:Key="SlotContextMenu">
-            <MenuItem Header="Add Device">
-                <MenuItem Header="Adder Device"
-                          Command="{Binding PlacementTarget.Tag.ChangeDeviceTypeCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
-                    <MenuItem.CommandParameter>
-                        <MultiBinding Converter="{x:Static local:TupleConverter.Instance}">
-                            <Binding Path="."/>
-                            <Binding Source="AdderDevice"/>
-                        </MultiBinding>
-                    </MenuItem.CommandParameter>
-                </MenuItem>
-                <MenuItem Header="Computer"
-                          Command="{Binding PlacementTarget.Tag.ChangeDeviceTypeCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
-                    <MenuItem.CommandParameter>
-                        <MultiBinding Converter="{x:Static local:TupleConverter.Instance}">
-                            <Binding Path="."/>
-                            <Binding Source="ComputerDevice"/>
-                        </MultiBinding>
-                    </MenuItem.CommandParameter>
-                </MenuItem>
-                <MenuItem Header="Network Device"
-                          Command="{Binding PlacementTarget.Tag.ChangeDeviceTypeCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
-                    <MenuItem.CommandParameter>
-                        <MultiBinding Converter="{x:Static local:TupleConverter.Instance}">
-                            <Binding Path="."/>
-                            <Binding Source="NetworkDevice"/>
-                        </MultiBinding>
-                    </MenuItem.CommandParameter>
-                </MenuItem>
-            </MenuItem>
-        </ContextMenu>
-
-        <Style x:Key="StatusIP1" TargetType="Ellipse">
-            <Setter Property="Fill" Value="{StaticResource StatusDisabledBrush}"/>
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding Device}" Value="{x:Null}">
-                    <Setter Property="Visibility" Value="Collapsed"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding Device.Connected}" Value="true">
-                    <Setter Property="Fill" Value="{StaticResource StatusOnlineBrush}" />
-                </DataTrigger>
-                <DataTrigger Binding="{Binding Device.Connected}" Value="false">
-                    <Setter Property="Fill" Value="{StaticResource StatusOfflineBrush}" />
-                </DataTrigger>
-                <DataTrigger Binding="{Binding DataContext.IsPingServiceRunning, ElementName=RackWindow}" Value="false">
-                    <Setter Property="Fill" Value="{StaticResource StatusDisabledBrush}"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding Device.Ping}" Value="false">
-                    <Setter Property="Fill" Value="{StaticResource StatusDisabledBrush}"/>
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
-        <Style x:Key="StatusIP2" TargetType="Ellipse">
-            <Setter Property="Fill" Value="{StaticResource StatusDisabledBrush}"/>
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding Device}" Value="{x:Null}">
-                    <Setter Property="Visibility" Value="Collapsed"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding Device.Connected2}" Value="true">
-                    <Setter Property="Fill" Value="{StaticResource StatusOnlineBrush}" />
-                </DataTrigger>
-                <DataTrigger Binding="{Binding Device.Connected2}" Value="false">
-                    <Setter Property="Fill" Value="{StaticResource StatusOfflineBrush}" />
-                </DataTrigger>
-                <DataTrigger Binding="{Binding DataContext.IsPingServiceRunning, ElementName=RackWindow}" Value="false">
-                    <Setter Property="Fill" Value="{StaticResource StatusDisabledBrush}"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding Device.Ping}" Value="false">
-                    <Setter Property="Fill" Value="{StaticResource StatusDisabledBrush}"/>
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
-
-        <!-- The one and only DataTemplate for a rack row -->
-        <DataTemplate x:Key="UnifiedRackUnitTemplate" DataType="{x:Type vm:RackUnitViewModel}">
-            <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Margin="2,0,2,0" MinHeight="100">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="35"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-
-                    <!-- The label gets the context menu to control the whole row's layout -->
-                    <TextBlock Text="{Binding Label}" VerticalAlignment="Center" HorizontalAlignment="Center" FontWeight="Bold" Margin="5,0"
-                               Foreground="{StaticResource TextSecondaryBrush}"
-                               Tag="{Binding DataContext, ElementName=RackWindow}"
-                               ContextMenu="{StaticResource RowContextMenu}"/>
-
-                    <!-- This ItemsControl displays the slots (1 for single, 2+ for split) -->
-                    <ItemsControl Grid.Column="1" ItemsSource="{Binding Slots}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <UniformGrid Rows="1"/>
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate DataType="{x:Type vm:SlotViewModel}">
-                                <!-- Each slot gets its own context menu to manage its device -->
-                                <Border Style="{StaticResource SlotItemStyle}"
-                                        Tag="{Binding DataContext, ElementName=RackWindow}"
-                                        ContextMenu="{StaticResource SlotContextMenu}">
-                                    <Border.InputBindings>
-                                        <MouseBinding MouseAction="LeftClick"
-                                                      Command="{Binding DataContext.ShowDeviceDetailsCommand, ElementName=RackWindow}"
-                                                      CommandParameter="{Binding}"/>
-                                    </Border.InputBindings>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <Grid Grid.Column="0">
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="*"/>
-                                                <RowDefinition Height="*"/>
-                                            </Grid.RowDefinitions>
-
-                                            <StackPanel Grid.Row="0" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="5">
-                                                <StackPanel.Style>
-                                                    <Style TargetType="StackPanel">
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding Device.SecondIPAddress}" Value="False">
-                                                                <Setter Property="Grid.RowSpan" Value="2"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </StackPanel.Style>
-                                                <Ellipse Style="{StaticResource StatusIP1}" Height="20" Stroke="Black" Width="20"/>
-                                                <TextBlock FontSize="12" HorizontalAlignment="Center"
-                                                       Foreground="{StaticResource TextSecondaryBrush}">
-                                                    <Run Text="{Binding Device.IPAddressInfo.CIDRNotation}"/>
-                                                </TextBlock>
-                                            </StackPanel>
-
-                                            <!-- Container for the second status indicator and its text -->
-                                            <StackPanel Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="5">
-                                                <StackPanel.Style>
-                                                    <Style TargetType="StackPanel">
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding Device.SecondIPAddress}" Value="False">
-                                                                <Setter Property="Visibility" Value="Collapsed"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </StackPanel.Style>
-                                                <Ellipse Style="{StaticResource StatusIP2}" Height="20" Stroke="Black" Width="20"/>
-                                                <TextBlock FontSize="12" HorizontalAlignment="Center"
-                                                       Foreground="{StaticResource TextSecondaryBrush}">
-                                                    <Run Text="{Binding Device.IPAddressInfo2.CIDRNotation}"/>
-                                                </TextBlock>
-                                            </StackPanel>
-                                        </Grid>
-                                        <StackPanel Grid.Column="1" Grid.RowSpan="2" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4">
-                                            <StackPanel.Style>
-                                                <Style TargetType="StackPanel">
-                                                    <Setter Property="Visibility" Value="Visible"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding Device}" Value="{x:Null}">
-                                                            <Setter Property="Visibility" Value="Collapsed"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </StackPanel.Style>
-                                            <TextBlock FontSize="12">
-                                                <Run Text="Name:" FontWeight="Bold"/>
-                                                <Run Text="{Binding Device.Name}"/>
-                                            </TextBlock>
-                                            <TextBlock FontSize="12">
-                                                <Run Text="Type:" FontWeight="Bold"/>
-                                                <Run Text="{Binding Device.DeviceType}"/>
-                                            </TextBlock>
-
-
-                                        </StackPanel>
-
-                                        <!-- Text shown when the slot is empty -->
-                                        <TextBlock Grid.ColumnSpan="2" Text="(Empty)" VerticalAlignment="Center" HorizontalAlignment="Center"
-                                                   Foreground="{StaticResource TextSecondaryBrush}" FontStyle="Italic">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding Device}" Value="{x:Null}">
-                                                            <Setter Property="Visibility" Value="Visible"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
-                                    </Grid>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </Grid>
-            </Border>
-        </DataTemplate>
-        <Style x:Key="TogglePingMenuItemStyle" TargetType="MenuItem">
-            <Setter Property="Header" Value="Enable Ping Service"/>
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding IsPingServiceRunning}" Value="True">
-                    <Setter Property="Header" Value="Disable Ping Service"/>
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
-        <Style x:Key="ToggleWoLMenuItemStyle" TargetType="MenuItem">
-            <Setter Property="Header" Value="Enable WoL Service"/>
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding IsWoLServiceRunning}" Value="True">
-                    <Setter Property="Header" Value="Disable WoL Service"/>
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
-
-        <!-- Style for the small toggle buttons -->
-        <Style x:Key="BaseToggleStyle" TargetType="Button">
-            <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Width" Value="25"/>
-            <Setter Property="Height" Value="25"/>
-            <Setter Property="VerticalAlignment" Value="Top"/>
-            <Setter Property="HorizontalAlignment" Value="Right"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Command" Value="{Binding DataContext.ToggleSettingsPanelCommand, ElementName=RackWindow}"/>
-        </Style>
-
-        <!-- Style for the "Close" button (visible when panel is open) -->
-        <Style x:Key="CloseSettingsButtonStyle" TargetType="Button" BasedOn="{StaticResource BaseToggleStyle}">
-            <Setter Property="Content" Value="&lt;"/>
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding DataContext.IsSettingsPanelOpen, ElementName=RackWindow}" Value="False">
-                    <Setter Property="Visibility" Value="Collapsed"/>
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
-
-        <!-- Style for the "Open" button (visible when panel is closed) -->
-        <Style x:Key="OpenSettingsButtonStyle" TargetType="Button" BasedOn="{StaticResource BaseToggleStyle}">
-            <Setter Property="Content" Value="&gt;"/>
-            <Setter Property="HorizontalAlignment" Value="Left"/>
-            <Setter Property="Margin" Value="5,0,0,0"/>
-            <Setter Property="Visibility" Value="Collapsed"/>
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding DataContext.IsSettingsPanelOpen, ElementName=RackWindow}" Value="False">
-                    <Setter Property="Visibility" Value="Visible"/>
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
-
+            <ControlTemplate x:Key="ContentOnlyTemplate" TargetType="{x:Type Button}">
+                <ContentPresenter />
+            </ControlTemplate>
+            
+        </ResourceDictionary>
     </Window.Resources>
     <DockPanel Background="{StaticResource PanelBackgroundBrush}">
-        <Menu DockPanel.Dock="Top" Background="{StaticResource PanelBackgroundBrush}" Foreground="{StaticResource TextPrimaryBrush}">
-            <!-- ... (Menu items remain the same) ... -->
-            <MenuItem Header="_Rack Size" Foreground="{StaticResource TextPrimaryBrush}">
-                <StackPanel Orientation="Horizontal" Margin="4" Focusable="False" Background="{StaticResource PanelBackgroundBrush}">
-                    <TextBlock Text="Number of U's:" VerticalAlignment="Center" Margin="0,0,5,0" Foreground="{StaticResource TextPrimaryBrush}"/>
-                    <TextBox Text="{Binding DataContext.NumberOfUnits, ElementName=RackWindow, UpdateSourceTrigger=PropertyChanged}" Width="50" VerticalAlignment="Center"
-                             Background="#333" Foreground="White" BorderBrush="#555" CaretBrush="White"/>
-                    <Button Content="Update" Command="{Binding DataContext.UpdateRackSizeCommand, ElementName=RackWindow}" Margin="5,0,0,0"
-                            Background="{StaticResource AccentBrush}" Foreground="White" BorderThickness="0"/>
-                </StackPanel>
-            </MenuItem>
-            <MenuItem Header="_Services" Foreground="{StaticResource TextPrimaryBrush}">
-                <MenuItem Style="{StaticResource TogglePingMenuItemStyle}"
-                          IsCheckable="True"
-                          IsChecked="{Binding DataContext.IsPingServiceRunning, ElementName=RackWindow}"
-                          Command="{Binding DataContext.TogglePingServiceCommand, ElementName=RackWindow}"/>
-                <MenuItem Style="{StaticResource ToggleWoLMenuItemStyle}"
-                          IsCheckable="True"
-                          IsChecked="{Binding DataContext.IsWoLServiceRunning, ElementName=RackWindow}"
-                          Command="{Binding DataContext.ToggleWoLServiceCommand, ElementName=RackWindow}"/>
-            </MenuItem>
-        </Menu>
 
         <!-- Main Layout Grid -->
         <Grid Margin="10">
@@ -385,10 +82,10 @@
 
                         <!-- Settings -->
                         <Label Grid.Column="0" Grid.Row="0" VerticalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}" FontSize="18" Margin="0,10,0,10">Enable Ping</Label>
-                        <usercontrols:ToggleButton Grid.Column="1" Grid.Row="0" IsOn="{Binding DataContext.IsPingServiceRunning, ElementName=RackWindow, Mode=TwoWay}" HorizontalAlignment="Right" Margin="0,10,0,10"/>
+                        <usercontrols:ToggleButton Grid.Column="1" Grid.Row="0" IsOn="{Binding DataContext.IsPingServiceRunning, ElementName=RackWindow, Mode=TwoWay}" HorizontalAlignment="Right" Margin="0,10,0,10" Width="75" Command="{Binding DataContext.TogglePingServiceCommand, ElementName=RackWindow}"/>
 
                         <Label Grid.Column="0" Grid.Row="1" VerticalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}" FontSize="18" Margin="0,10,0,10">Wake on Lan</Label>
-                        <usercontrols:ToggleButton Grid.Column="1" Grid.Row="1" IsOn="{Binding DataContext.IsWoLServiceRunning, ElementName=RackWindow, Mode=TwoWay}" Margin="0,10,0,10" HorizontalAlignment="Right"/>
+                        <usercontrols:ToggleButton Grid.Column="1" Grid.Row="1" IsOn="{Binding DataContext.IsWoLServiceRunning, ElementName=RackWindow, Mode=TwoWay}" Margin="0,10,0,10" HorizontalAlignment="Right" Width="75" Command="{Binding DataContext.ToggleWoLServiceCommand, ElementName=RackWindow}"/>
 
                         <Label Grid.Column="0" Grid.Row="2" VerticalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}" FontSize="18" Margin="0,10,0,10"># of Rack U's</Label>
 
@@ -520,7 +217,7 @@
                     </Grid>
 
                     <!-- Main Content Scroller -->
-                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Visible" Padding="10,0,10,10">
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="10,0,10,10">
                         <!-- Changed to Visible -->
                         <ItemsControl  x:Name="MainRackItemsControl" ItemsSource="{Binding DataContext.RackUnits, ElementName=RackWindow}"
                                       ItemTemplate="{StaticResource UnifiedRackUnitTemplate}"/>

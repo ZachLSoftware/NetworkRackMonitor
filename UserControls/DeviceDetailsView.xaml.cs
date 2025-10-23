@@ -1,4 +1,5 @@
-﻿using System;
+﻿using RackMonitor.ViewModels;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -23,6 +24,29 @@ namespace RackMonitor.UserControls
         public DeviceDetailsView()
         {
             InitializeComponent();
+        }
+
+        private void General_Filter(object sender, FilterEventArgs e)
+        {
+            if (e.Item is DevicePropertyViewModel propVM)
+            {
+                e.Accepted = string.IsNullOrEmpty(propVM.Category) || propVM.Category.Equals("General", StringComparison.OrdinalIgnoreCase);
+            }
+            else
+            {
+                e.Accepted = false;
+            }
+        }
+        private void Network_Filter(object sender, FilterEventArgs e)
+        {
+            if (e.Item is DevicePropertyViewModel propVM)
+            {
+                e.Accepted = string.IsNullOrEmpty(propVM.Category) || propVM.Category.Equals("Network", StringComparison.OrdinalIgnoreCase);
+            }
+            else
+            {
+                e.Accepted = false;
+            }
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using RackMonitor.ViewModels;
+using System.Diagnostics;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -17,6 +18,7 @@ namespace RackMonitor;
 /// </summary>
 public partial class MainWindow : Window
 {
+    private ToolTip StatusToolTip = new ToolTip();
     public MainWindow()
     {
         InitializeComponent();

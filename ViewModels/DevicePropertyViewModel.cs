@@ -15,6 +15,8 @@ namespace RackMonitor.ViewModels
     public class DevicePropertyViewModel : INotifyPropertyChanged
     {
         public PropertyInfo PropertyInfo { get; }
+        public RackDevice SourceDevice { get; }
+
         private string _displayName;
         public string DisplayName 
         { 
@@ -54,6 +56,19 @@ namespace RackMonitor.ViewModels
                 }
             }
         }
+        private string _category = "General";
+        public string Category
+        {
+            get => _category;
+            set
+            {
+                if (_category != value)
+                {
+                    _category = value;
+                    OnPropertyChanged(nameof(Category));
+                }
+            }
+        }
 
         private bool _isVisible = true;
         public bool IsVisible
@@ -62,43 +77,24 @@ namespace RackMonitor.ViewModels
             set { _isVisible = value; OnPropertyChanged(); }
         }
 
-        public DevicePropertyViewModel(object source, PropertyInfo propertyInfo)
+        public DevicePropertyViewModel(RackDevice source, PropertyInfo propertyInfo, string category)
         {
             PropertyInfo = propertyInfo;
             _propertyValue = propertyInfo.GetValue(source);
+            SourceDevice = source;
             PropertyName = propertyInfo.Name;
             DisplayName = (source as ComputerDevice).GetFriendlyName(propertyInfo.Name);
+            Category = category;
         }
 
-        public DevicePropertyViewModel(PropertyInfo propInfo, string displayName, string StringProperty, bool visible)
+        public DevicePropertyViewModel(PropertyInfo propInfo, string displayName, string StringProperty, bool visible, string category)
         {
             DisplayName = displayName;
             PropertyValue = StringProperty;
             PropertyInfo = propInfo;
             PropertyName = propInfo.Name;
             IsVisible = visible;
-            IsVisible = visible;
-        }
-
-        public string FriendlyDisplayName(string name)
-        {
-            if (string.IsNullOrWhiteSpace(name)) { return string.Empty; }
-            StringBuilder sb = new StringBuilder();
-            sb.Append(name[0]);
-
-            for (int i = 1; i<name.Length; i++)
-            {
-                if (char.IsUpper(name[i]))
-                {
-                    if (((name[i-1] != ' ' && !char.IsUpper(name[i - 1]))) || (name[i] == 'A' && name[i-1] == 'P' && name[i-2] == 'I'))
-                    {
-                        sb.Append(" ");
-                    }
-
-                }
-                sb.Append(name[i]);
-            }
-            return sb.ToString();
+            Category = category;
         }
 
 
