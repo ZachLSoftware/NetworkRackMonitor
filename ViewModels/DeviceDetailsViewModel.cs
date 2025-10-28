@@ -7,6 +7,8 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Security;
+using System.Windows;
 using System.Windows.Input;
 
 namespace RackMonitor.ViewModels
@@ -18,8 +20,10 @@ namespace RackMonitor.ViewModels
         public event Action Saved;
         public ObservableCollection<DevicePropertyViewModel> DeviceProperties { get; } = new ObservableCollection<DevicePropertyViewModel>();
         public List<string> AvailableAdderModels { get; } = new List<string> { "Other", "ASP001", "ALIF4000T", "ALIF2100T" };
+        public bool IsBusy = false;
 
         public ICommand SaveCommand { get; }
+        public ICommand ShutdownCommand { get; }
 
         public List<string> hiddenFields = new List<string>
         {
@@ -38,6 +42,58 @@ namespace RackMonitor.ViewModels
             PopulateProperties(device);
 
             SaveCommand = new RelayCommand(ExecuteSave);
+            ShutdownCommand = new RelayCommand(ExecuteShutdown, CanShutdown);
+        }
+
+        public bool CanShutdown(object parameter)
+        {
+            return this.CurrentDevice is ComputerDevice && !IsBusy;
+        }
+
+        public async void ExecuteShutdown(object parameter) // parameter is not used here
+        {
+            // Use the ViewModel's CurrentDevice property
+            if (this.CurrentDevice is ComputerDevice computer)
+            {
+                string targetIp = computer.IPAddressInfo?.Address;
+
+                if (!string.IsNullOrEmpty(targetIp))
+                {
+                    // --- !!! WARNING: HARDCODED CREDENTIALS - REPLACE WITH SECURE METHOD !!! ---
+                    //string username = "YourDomain\\YourAdminUser"; // e.g., "MYDOMAIN\\Admin" or ".\LocalAdmin"
+                    //SecureString password = new SecureString();
+                    // You MUST get the password securely (e.g., from PasswordBox) and append char by char
+                    // Example: foreach (char c in plainTextPassword) { password.AppendChar(c); }
+                    //"YourSecurePassword".ToList().ForEach(password.AppendChar); // Temporary, insecure way for testing only!
+                    //password.MakeReadOnly();
+                    // --- !!! END WARNING !!! ---
+
+                    IsBusy = true; // Set busy flag
+
+                    // Call the service asynchronously
+                    string result = await ShutdownService.ShutdownComputerAsync(targetIp, "test", null);
+
+                    IsBusy = false; // Clear busy flag
+
+                    // Dispose SecureString immediately after use
+                    //password.Dispose();
+
+                    // Show result message
+                    if (!string.IsNullOrEmpty(result)) // An error occurred
+                    {
+                        MessageBox.Show($"Shutdown attempt failed:\n{result}", "Shutdown Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    }
+                    else // Success
+                    {
+                        MessageBox.Show($"Shutdown command sent successfully to {targetIp}.", "Shutdown Initiated", MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Cannot execute shutdown: IP Address is missing for this device.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            // No 'else' needed as CanExecute should prevent this unless CurrentDevice changes unexpectedly
         }
 
         private void PopulateProperties(RackDevice device)

@@ -1,0 +1,200 @@
+﻿<UserControl x:Class="RackMonitor.UserControls.RackSlotControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:RackMonitor"
+             xmlns:vm="clr-namespace:RackMonitor.ViewModels"
+             xmlns:usercontrols="clr-namespace:RackMonitor.UserControls"
+             xmlns:converters="clr-namespace:RackMonitor.Converters"
+             xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
+             xmlns:behavior="clr-namespace:RackMonitor.Behaviors"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:SlotViewModel, IsDesignTimeCreatable=True}"
+             d:DesignHeight="100" d:DesignWidth="300">
+
+    <UserControl.Resources>
+        <!-- Bring necessary resources here if they aren't merged globally -->
+        <!-- Or rely on them being merged in App.xaml / MainWindow.xaml -->
+        <converters:ImageSelector x:Key="ImageSelector"/>
+
+        <!-- Tooltip Style (Can be defined here or globally) -->
+        <Style x:Key="CustomToolTipStyle" TargetType="ToolTip">
+            <Setter Property="OverridesDefaultStyle" Value="true"/>
+            <Setter Property="HasDropShadow" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToolTip">
+                        <Border Background="{StaticResource PanelBackgroundBrush}"
+                                BorderBrush="{StaticResource BorderBrush}"
+                                BorderThickness="1">
+                            <ContentPresenter Margin="5" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Status Ellipse Style (Can be defined here or globally) -->
+        <Style x:Key="StatusEllipseStyle" TargetType="Ellipse">
+            <!-- Reuse the detailed trigger logic from MainWindowStyles.xaml -->
+            <!-- Or copy/paste the full Style definition here -->
+            <Setter Property="Fill" Value="{StaticResource StatusDisabledBrush}"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Device.Ping}" Value="False">
+                    <Setter Property="Fill" Value="{StaticResource StatusDisabledBrush}"/>
+                </DataTrigger>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding Device.Ping}" Value="True"/>
+                        <Condition Binding="{Binding Device.Connected}" Value="False"/>
+                        <Condition Binding="{Binding Device.SecondIPAddress}" Value="False"/>
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="Fill" Value="{StaticResource StatusOfflineBrush}"/>
+                </MultiDataTrigger>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding Device.Ping}" Value="True"/>
+                        <Condition Binding="{Binding Device.Connected}" Value="False"/>
+                        <Condition Binding="{Binding Device.SecondIPAddress}" Value="True"/>
+                        <Condition Binding="{Binding Device.Connected2}" Value="False"/>
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="Fill" Value="{StaticResource StatusOfflineBrush}"/>
+                </MultiDataTrigger>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding Device.Ping}" Value="True"/>
+                        <Condition Binding="{Binding Device.Connected}" Value="False"/>
+                        <Condition Binding="{Binding Device.SecondIPAddress}" Value="True"/>
+                        <Condition Binding="{Binding Device.Connected2}" Value="True"/>
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="Fill" Value="{StaticResource StatusWarnBrush}"/>
+                </MultiDataTrigger>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding Device.Ping}" Value="True"/>
+                        <Condition Binding="{Binding Device.Connected}" Value="True"/>
+                        <Condition Binding="{Binding Device.SecondIPAddress}" Value="True"/>
+                        <Condition Binding="{Binding Device.Connected2}" Value="False"/>
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="Fill" Value="{StaticResource StatusWarnBrush}"/>
+                </MultiDataTrigger>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding Device.Ping}" Value="True"/>
+                        <Condition Binding="{Binding Device.Connected}" Value="True"/>
+                        <Condition Binding="{Binding Device.SecondIPAddress}" Value="False"/>
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="Fill" Value="{StaticResource StatusOnlineBrush}"/>
+                </MultiDataTrigger>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding Device.Ping}" Value="True"/>
+                        <Condition Binding="{Binding Device.Connected}" Value="True"/>
+                        <Condition Binding="{Binding Device.SecondIPAddress}" Value="True"/>
+                        <Condition Binding="{Binding Device.Connected2}" Value="True"/>
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="Fill" Value="{StaticResource StatusOnlineBrush}"/>
+                </MultiDataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Slot Border Style (Can be defined here or globally) -->
+        <Style x:Key="SlotItemStyle" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource SlotBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource SlotBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="MinHeight" Value="50"/>
+            <Setter Property="CornerRadius" Value="3"/>
+            <Setter Property="TextElement.Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+        </Style>
+
+    </UserControl.Resources>
+
+    <!-- The root is now the Border representing ONE slot -->
+    <!-- Event handlers are attached here -->
+    <Border Style="{StaticResource SlotItemStyle}"
+            Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}" 
+            ContextMenu="{StaticResource SlotContextMenu}"
+            AllowDrop="True">
+        <i:Interaction.Behaviors>
+            <behavior:DragSourceBehavior/>
+            <behavior:DropTargetBehavior DropCommand="{Binding DataContext.DropItemCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+        </i:Interaction.Behaviors>
+
+        <Border.InputBindings>
+            <MouseBinding MouseAction="LeftClick"
+                          Command="{Binding DataContext.ShowDeviceDetailsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                          CommandParameter="{Binding}"/>
+            <!-- Command parameter is the SlotViewModel (this control's DataContext) -->
+        </Border.InputBindings>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <!-- Status -->
+                <ColumnDefinition Width="Auto"/>
+                <!-- Icon -->
+                <ColumnDefinition Width="*"/>
+                <!-- Name (takes remaining space) -->
+            </Grid.ColumnDefinitions>
+
+            <!-- Status Ellipse -->
+            <Ellipse Grid.Column="0" Style="{StaticResource StatusEllipseStyle}" Height="20" Stroke="Black" Width="20" HorizontalAlignment="Left" Margin="10,0,5,0" VerticalAlignment="Center">
+                <Ellipse.ToolTip>
+                    <ToolTip Style="{StaticResource CustomToolTipStyle}">
+                        <!-- DataContext is SlotViewModel, so bind directly to Device -->
+                        <usercontrols:CustomStatusToolTip Device="{Binding Device}"/>
+                    </ToolTip>
+                </Ellipse.ToolTip>
+            </Ellipse>
+
+            <!-- Device Icon -->
+            <Image Grid.Column="1" MaxHeight="40" MaxWidth="100" Margin="5,0" VerticalAlignment="Center">
+                <Image.Source>
+                    <MultiBinding Converter="{StaticResource ImageSelector}">
+                        <Binding Path="Device"/>
+                        <Binding Path="Device.Model"/>
+                    </MultiBinding>
+                </Image.Source>
+            </Image>
+
+            <!-- Device Name -->
+            <StackPanel Grid.Column="2" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="4">
+                <StackPanel.Style>
+                    <Style TargetType="StackPanel">
+                        <Setter Property="Visibility" Value="Visible"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Device}" Value="{x:Null}">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </StackPanel.Style>
+                <TextBlock FontSize="16" FontWeight="Bold" TextTrimming="CharacterEllipsis">
+                     <Run Text="{Binding Device.Name}"/>
+                </TextBlock>
+                <!-- Could add Device.IPAddressInfo.Address here if desired -->
+                <TextBlock FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" TextTrimming="CharacterEllipsis">
+                     <Run Text="{Binding Device.IPAddressInfo.Address}"/>
+                </TextBlock>
+            </StackPanel>
+
+            <!-- Text shown when the slot is empty -->
+            <TextBlock Grid.Column="1" Grid.ColumnSpan="2" Text="(Empty)" VerticalAlignment="Center" HorizontalAlignment="Center"
+                 Foreground="{StaticResource TextSecondaryBrush}" FontStyle="Italic">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Device}" Value="{x:Null}">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+        </Grid>
+    </Border>
+</UserControl>

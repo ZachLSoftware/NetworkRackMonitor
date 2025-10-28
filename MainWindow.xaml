@@ -188,7 +188,7 @@
                                 BorderBrush="{StaticResource BorderBrush}"
                                 BorderThickness="0,0,0,2"
                                 VerticalAlignment="Bottom" Margin="5,0,5,0">
-                            <TextBlock FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Bottom" FontSize="20" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,5">U #</TextBlock>
+                            <TextBlock FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Bottom" FontSize="20" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,5">U#</TextBlock>
                         </Border>
 
                         <!-- Slot A TextBlock -->

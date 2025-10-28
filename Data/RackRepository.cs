@@ -3,6 +3,7 @@ using RackMonitor.ViewModels;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -21,6 +22,7 @@ namespace RackMonitor.Data
         public event EventHandler<DeviceSavedEventArgs> DeviceSaved;
         public bool GlobalPingEnabled = false;
         public bool GlobalWoLEnabled = false;
+        public int UnitNum = 12;
 
         public RackRepository()
         {
@@ -38,9 +40,11 @@ namespace RackMonitor.Data
         ///Save and Load
         public void SaveState()
         {
+            UnitNum = RackUnits.Count;
+            Debug.WriteLine($"Ping: {GlobalPingEnabled} WOL: {GlobalWoLEnabled}");
             var rackStateDto = new RackStateDto
             {
-                NumberOfUnits = RackUnits.Count,
+                NumberOfUnits = UnitNum,
                 Units = RackUnits.Select(UnitVM => new RackUnitDto
                 {
                     UnitNumber = UnitVM.UnitNumber,
@@ -85,6 +89,9 @@ namespace RackMonitor.Data
                 }
                 RackUnits.Add(unitVM);
             }
+            GlobalPingEnabled = rackStateDto.Ping;
+            GlobalWoLEnabled = rackStateDto.WoL;
+            
             //Save after loading to include any updated parameters
             SaveState();
 
@@ -113,6 +120,19 @@ namespace RackMonitor.Data
         public void CheckDeviceState(RackDevice device)
         {
             DeviceSaved?.Invoke(this, new DeviceSavedEventArgs(device));
+        }
+
+        public void MoveOrSwapDevice(SlotViewModel sourceSlot, SlotViewModel targetSlot)
+        {
+            RackDevice sourceDevice = sourceSlot.Device;
+            RackDevice targetDevice = targetSlot.Device;
+
+            // Perform the swap/move
+            targetSlot.Device = sourceDevice; // Move source device to target
+            sourceSlot.Device = targetDevice; // Move target device (or null) to source
+
+            // Save the updated state
+            SaveState();
         }
         private RackDevice MapDtoToDevice(DeviceDto dto)
         {

@@ -1,5 +1,6 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:RackMonitor">
     <Style x:Key="Status" TargetType="Ellipse">
         <Setter Property="Fill" Value="{StaticResource StatusDisabledBrush}"/>
         <Style.Triggers>
@@ -234,5 +235,37 @@
             </Setter.Value>
         </Setter>
     </Style>
+
+    <ContextMenu x:Key="SlotContextMenu">
+        <MenuItem Header="Add Device">
+            <MenuItem Header="Adder Device"
+                  Command="{Binding PlacementTarget.Tag.ChangeDeviceTypeCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                <MenuItem.CommandParameter>
+                    <MultiBinding Converter="{x:Static local:TupleConverter.Instance}">
+                        <Binding Path="."/>
+                        <Binding Source="AdderDevice"/>
+                    </MultiBinding>
+                </MenuItem.CommandParameter>
+            </MenuItem>
+            <MenuItem Header="Computer"
+                  Command="{Binding PlacementTarget.Tag.ChangeDeviceTypeCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                <MenuItem.CommandParameter>
+                    <MultiBinding Converter="{x:Static local:TupleConverter.Instance}">
+                        <Binding Path="."/>
+                        <Binding Source="ComputerDevice"/>
+                    </MultiBinding>
+                </MenuItem.CommandParameter>
+            </MenuItem>
+            <MenuItem Header="Network Device"
+                  Command="{Binding PlacementTarget.Tag.ChangeDeviceTypeCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                <MenuItem.CommandParameter>
+                    <MultiBinding Converter="{x:Static local:TupleConverter.Instance}">
+                        <Binding Path="."/>
+                        <Binding Source="NetworkDevice"/>
+                    </MultiBinding>
+                </MenuItem.CommandParameter>
+            </MenuItem>
+        </MenuItem>
+    </ContextMenu>
 
 </ResourceDictionary>

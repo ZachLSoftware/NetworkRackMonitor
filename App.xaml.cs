@@ -28,6 +28,7 @@ public partial class App : Application
         var mainWindow = new MainWindow
         {
             DataContext = rackViewModel
+            
         };
 
         mainWindow.Show();

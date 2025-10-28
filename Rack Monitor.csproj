@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net9.0-windows</TargetFramework>
     <RootNamespace>RackMonitor</RootNamespace>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.5.4" />
+    <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.135" />
   </ItemGroup>
 
   <ItemGroup>
@@ -36,5 +37,11 @@
     <Resource Include="Assets\Icons\ASP001.png" />
     <Resource Include="Assets\Icons\PC.png" />
   </ItemGroup>
+
+	<ItemGroup>
+		<Reference Include="System.Management.Automation">
+			<HintPath>$(UserProfile)\.nuget\packages\microsoft.powershell.sdk\7.5.4\ref\net8.0\System.Management.Automation.dll</HintPath>
+		</Reference>
+	</ItemGroup>
 
 </Project>

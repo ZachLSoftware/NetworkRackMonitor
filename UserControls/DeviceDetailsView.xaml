@@ -159,9 +159,18 @@
         </TabControl>
 
         <!-- Save Button -->
-        <Button Grid.Row="3" Content="Save" Command="{Binding SaveCommand}"
+        <Grid Grid.Row="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Button Grid.Row="3" Grid.Column="1" Content="Save" Command="{Binding SaveCommand}"
                 HorizontalAlignment="Right" MinWidth="80" Margin="0,15,0,0"
                 Background="{StaticResource AccentBrush}" Foreground="White" BorderThickness="0"/>
+            <Button Grid.Column="0" Content="Shutdown" Command="{Binding ShutdownCommand}"
+                HorizontalAlignment="Right" MinWidth="80" Margin="0,15,0,0"
+                Background="{StaticResource AccentBrush}" Foreground="White" BorderThickness="0"/>
+        </Grid>
         <!-- Removed Close button, using 'X' at top instead -->
     </Grid>
 </UserControl>

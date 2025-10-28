@@ -1,4 +1,5 @@
-﻿using RackMonitor.Data;
+﻿using RackMonitor.Behaviors;
+using RackMonitor.Data;
 using RackMonitor.Models;
 using System;
 using System.Collections.Generic;
@@ -6,6 +7,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Windows.Input;
 
 namespace RackMonitor.ViewModels
@@ -112,6 +114,7 @@ namespace RackMonitor.ViewModels
         public ICommand TogglePingServiceCommand { get; }
         public ICommand ToggleSettingsPanelCommand { get; }
         public ICommand CloseDetailsPanelCommand { get; }
+        public ICommand DropItemCommand { get; }
 
         public EventHandler<PingServiceToggledEventArgs> PingToggled;
         public EventHandler<WoLServiceToggledEventArgs> WoLToggled;
@@ -120,6 +123,9 @@ namespace RackMonitor.ViewModels
         public RackViewModel(RackRepository repository)
         {
             _repository = repository;
+            IsPingServiceRunning = _repository.GlobalPingEnabled;
+            IsWoLServiceRunning = _repository.GlobalWoLEnabled;
+            NumberOfUnits = _repository.UnitNum;
 
             //Command Bindings
             UpdateRackSizeCommand = new RelayCommand(ExecuteUpdateRackSize);
@@ -132,13 +138,17 @@ namespace RackMonitor.ViewModels
             TogglePingServiceCommand = new RelayCommand(ExecuteTogglePing);
             ToggleSettingsPanelCommand = new RelayCommand(ExecuteToggleSettingsPanel);
             CloseDetailsPanelCommand = new RelayCommand(ExecuteCloseDetailsPanel);
+            DropItemCommand = new RelayCommand(ExecuteDropItem, CanExecuteDropItem);
 
             //Create the initial rack
             //_repository.UpdateRackSize(NumberOfUnits);
         }
 
         #region execution_checks
-
+        private bool CanExecuteDropItem(object parameter)
+        {
+            return parameter is DragDropData;
+        }
         /// <summary>
         /// Allows adding up to 4 slots to avoid excessive columns
         /// </summary>
@@ -259,11 +269,14 @@ namespace RackMonitor.ViewModels
         private void ExecuteToggleWoL(object parameter)
         {
             WoLToggled?.Invoke(this, new WoLServiceToggledEventArgs(IsWoLServiceRunning));
+            _repository.GlobalWoLEnabled = IsWoLServiceRunning;
+            _repository.SaveState();
         }
         private void ExecuteTogglePing(object parameter)
         {
-            Debug.WriteLine("Toggling");
             PingToggled?.Invoke(this, new PingServiceToggledEventArgs(IsPingServiceRunning));
+            _repository.GlobalPingEnabled = IsPingServiceRunning;
+            _repository.SaveState();
         }
         private void ExecuteCloseDetailsPanel(object parameter)
         {
@@ -275,6 +288,20 @@ namespace RackMonitor.ViewModels
 
         #endregion
 
+        public void ExecuteDropItem(object parameter)
+        {
+
+            Debug.WriteLine("ExecuteDropItem called"); // Debug output
+            if (parameter is DragDropData data && data.SourceSlot != null && data.TargetSlot != null)
+            {
+                Debug.WriteLine($"Attempting move from slot {data.SourceSlot.GetHashCode()} to {data.TargetSlot.GetHashCode()}"); // More debug
+                _repository.MoveOrSwapDevice(data.SourceSlot, data.TargetSlot);
+            }
+            else
+            {
+                Debug.WriteLine("Drop failed: Invalid DragDropData received."); // Debug invalid data
+            }
+        }
 
 
         public event PropertyChangedEventHandler PropertyChanged;
