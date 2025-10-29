@@ -100,6 +100,37 @@ namespace RackMonitor.Models
                 }
             }
         }
+
+        private bool _hasStatus = false;
+        [PropertyVisibility(false)]
+        public bool HasStatus
+        {
+            get => _hasStatus;
+            set
+            {
+                if (_hasStatus != value)
+                {
+                    _hasStatus = value;
+                    OnPropertyChanged(nameof(HasStatus));
+                }
+            }
+        }
+
+
+        private string _statusMessage = "";
+        [PropertyVisibility(false)]
+        public string StatusMessage
+        {
+            get => _statusMessage;
+            set
+            {
+                if (_statusMessage != value)
+                {
+                    _statusMessage = value;
+                    OnPropertyChanged(nameof(StatusMessage));
+                }
+            }
+        }
         private bool _secondIPAddress;
         [Order(15)]
         [FriendlyName("Enable 2nd IP")]

@@ -41,27 +41,22 @@ namespace RackMonitor.Behaviors
 
         private void AssociatedObject_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            // Reset flags
+
             isDragging = false;
             dragStarted = false;
 
             if (AssociatedObject.DataContext is SlotViewModel slotVM && slotVM.Device != null)
             {
                 startPoint = e.GetPosition(AssociatedObject);
-                isDragging = true; // Indicate potential drag start
-                AssociatedObject.CaptureMouse(); // Capture mouse immediately
-                Debug.WriteLine("PreviewMouseLeftButtonDown: Potential drag started.");
-                // Do NOT set e.Handled=true here, might interfere with other controls needing click
+                isDragging = true;
+                AssociatedObject.CaptureMouse();
+
             }
-            else
-            {
-                Debug.WriteLine("PreviewMouseLeftButtonDown: No device or wrong DataContext, ignoring.");
-            }
+
         }
 
         private void AssociatedObject_PreviewMouseMove(object sender, MouseEventArgs e)
         {
-            // Only proceed if mouse is captured (ensures button is still down) and drag hasn't officially started
             if (AssociatedObject.IsMouseCaptured && isDragging && !dragStarted && e.LeftButton == MouseButtonState.Pressed)
             {
                 Point currentPosition = e.GetPosition(AssociatedObject);
@@ -70,55 +65,46 @@ namespace RackMonitor.Behaviors
                 if (Math.Abs(diff.X) > SystemParameters.MinimumHorizontalDragDistance ||
                     Math.Abs(diff.Y) > SystemParameters.MinimumVerticalDragDistance)
                 {
-                    Debug.WriteLine("PreviewMouseMove: Drag threshold exceeded.");
                     if (AssociatedObject.DataContext is SlotViewModel slotVM && slotVM.Device != null)
                     {
-                        dragStarted = true; // Mark drag as officially started
+                        dragStarted = true; 
+                        CreateAndShowAdorner(startPoint);
 
-                        // Create and show the adorner BEFORE starting DoDragDrop
-                        CreateAndShowAdorner(startPoint); // Pass the initial position where the drag started relative to element
-
-                        AssociatedObject.GiveFeedback += AssociatedObject_GiveFeedback; // Subscribe to track mouse
+                        AssociatedObject.GiveFeedback += AssociatedObject_GiveFeedback;
 
                         DataObject dragData = new DataObject(DataFormat, slotVM);
-                        AssociatedObject.Opacity = 0.5; // Make original semi-transparent
+                        AssociatedObject.Opacity = 0.5; 
 
-                        Debug.WriteLine("PreviewMouseMove: Starting DoDragDrop...");
+
                         try
                         {
                             DragDropEffects result = DragDrop.DoDragDrop(AssociatedObject, dragData, DragDropEffects.Move);
-                            Debug.WriteLine($"PreviewMouseMove: DoDragDrop finished with result: {result}");
+
                         }
-                        catch (Exception ex)
-                        {
-                            Debug.WriteLine($"PreviewMouseMove: Exception during DoDragDrop: {ex.Message}");
-                        }
+
                         finally // Ensure cleanup happens regardless of result or exceptions
                         {
                             Debug.WriteLine("PreviewMouseMove: Cleaning up after DoDragDrop...");
-                            AssociatedObject.GiveFeedback -= AssociatedObject_GiveFeedback; // Unsubscribe
-                            RemoveAdorner(); // Remove the visual
-                            AssociatedObject.Opacity = 1.0; // Restore opacity
-                            isDragging = false; // Reset state
-                            AssociatedObject.ReleaseMouseCapture(); // IMPORTANT: Release mouse capture
+                            AssociatedObject.GiveFeedback -= AssociatedObject_GiveFeedback;
+                            RemoveAdorner();
+                            AssociatedObject.Opacity = 1.0; 
+                            isDragging = false; 
+                            AssociatedObject.ReleaseMouseCapture(); 
                         }
-                        e.Handled = true; // Prevent further mouse move handling once drag starts
+                        e.Handled = true;
                     }
                     else
                     {
-                        Debug.WriteLine("PreviewMouseMove: Drag threshold met, but DataContext invalid?");
-                        isDragging = false; // Reset if context is lost
+                        isDragging = false;
                         AssociatedObject.ReleaseMouseCapture();
                     }
                 }
             }
-            // Handle case where mouse button released without meeting drag threshold
             else if (isDragging && e.LeftButton != MouseButtonState.Pressed)
             {
                 isDragging = false;
                 dragStarted = false;
                 AssociatedObject.ReleaseMouseCapture();
-                Debug.WriteLine("PreviewMouseMove: Mouse button released before drag threshold met.");
             }
         }
 
@@ -127,12 +113,10 @@ namespace RackMonitor.Behaviors
             if (AssociatedObject.IsMouseCaptured && isDragging)
             {
                 isDragging = false;
-                dragStarted = false; // Reset just in case
+                dragStarted = false;
                 AssociatedObject.ReleaseMouseCapture();
-                // If the drag never *officially* started (DoDragDrop wasn't called),
-                // ensure any potentially created adorner is removed.
+
                 RemoveAdorner();
-                Debug.WriteLine("PreviewMouseLeftButtonUp: Drag cancelled before starting, released capture.");
             }
         }
 
@@ -143,20 +127,16 @@ namespace RackMonitor.Behaviors
                 if (_dragAdorner == null || _adornerLayer == null)
                 { Debug.WriteLine("GiveFeedback: Adorner or Layer is null!"); e.UseDefaultCursors = true; e.Handled = true; return; }
 
-                // Get CURRENT mouse position in SCREEN coordinates
                 Point currentMouseScreenPos = GetScreenMousePosition();
-                // Debug.WriteLine($"GiveFeedback: MouseScreen=({currentMouseScreenPos.X},{currentMouseScreenPos.Y})");
 
-                if (currentMouseScreenPos.X != 0 || currentMouseScreenPos.Y != 0) // Check if GetScreenMousePosition worked
+                if (currentMouseScreenPos.X != 0 || currentMouseScreenPos.Y != 0) 
                 {
-                    // Pass SCREEN coordinates to the adorner's update method
                     _dragAdorner.UpdatePosition(currentMouseScreenPos);
-                    _adornerLayer.Update(AssociatedObject); // Tell layer to update
+                    _adornerLayer.Update(AssociatedObject); 
                 }
                 else
                 {
-                    Debug.WriteLine("GiveFeedback: Failed to get screen mouse position.");
-                    e.UseDefaultCursors = true; // Fallback if position invalid
+                    e.UseDefaultCursors = true;
                 }
 
 
@@ -166,7 +146,6 @@ namespace RackMonitor.Behaviors
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"GiveFeedback Error: {ex.Message}");
                 e.UseDefaultCursors = true;
                 e.Handled = true;
             }
@@ -176,10 +155,8 @@ namespace RackMonitor.Behaviors
 
         private void CreateAndShowAdorner(Point initialMousePos)
         {
-            Debug.WriteLine("CreateAndShowAdorner: Attempting to create adorner...");
             if (_adornerLayer != null) // Avoid recreating if somehow called twice
             {
-                Debug.WriteLine("CreateAndShowAdorner: Layer already exists?");
                 return;
             }
 
@@ -190,16 +167,11 @@ namespace RackMonitor.Behaviors
                 if (current is AdornerDecorator decorator)
                 {
                     _adornerLayer = decorator.AdornerLayer;
-                    Debug.WriteLine("CreateAndShowAdorner: Found AdornerLayer in an AdornerDecorator.");
                 }
                 else
                 {
                     // Try GetAdornerLayer directly on the current element
                     _adornerLayer = AdornerLayer.GetAdornerLayer(current as Visual);
-                    if (_adornerLayer != null)
-                    {
-                        Debug.WriteLine($"CreateAndShowAdorner: Found AdornerLayer directly on {current.GetType().Name}.");
-                    }
                 }
                 current = VisualTreeHelper.GetParent(current);
             }
@@ -214,7 +186,6 @@ namespace RackMonitor.Behaviors
                     if (decorator != null)
                     {
                         _adornerLayer = decorator.AdornerLayer;
-                        Debug.WriteLine("CreateAndShowAdorner: Found AdornerLayer via Window's AdornerDecorator.");
                     }
                 }
             }
@@ -229,22 +200,12 @@ namespace RackMonitor.Behaviors
                     try
                     {
                         _adornerLayer.Add(_dragAdorner);
-                        Debug.WriteLine("CreateAndShowAdorner: Adorner successfully added.");
                     }
                     catch (Exception ex)
                     {
-                        Debug.WriteLine($"CreateAndShowAdorner: Error adding adorner: {ex.Message}");
                         _dragAdorner = null; // Ensure it's null if add failed
                     }
                 }
-                else
-                {
-                    Debug.WriteLine("CreateAndShowAdorner: Failed to create drag visual.");
-                }
-            }
-            else
-            {
-                Debug.WriteLine("CreateAndShowAdorner: FAILED to find AdornerLayer!");
             }
         }
 
@@ -252,13 +213,11 @@ namespace RackMonitor.Behaviors
         {
             if (_dragAdorner != null)
             {
-                Debug.WriteLine("RemoveAdorner: Removing adorner...");
                 if (_adornerLayer != null)
                 {
                     try
                     {
                         _adornerLayer.Remove(_dragAdorner);
-                        Debug.WriteLine("RemoveAdorner: Adorner removed.");
                     }
                     catch (Exception ex)
                     {
@@ -293,7 +252,6 @@ namespace RackMonitor.Behaviors
                 Fill = visualBrush,
                 IsHitTestVisible = false
             };
-            Debug.WriteLine($"CreateDragVisual: Created visual with size {rect.Width}x{rect.Height}");
             return rect;
         }
 
@@ -311,12 +269,9 @@ namespace RackMonitor.Behaviors
                 }
                 else 
                 {
-                    Debug.WriteLine("GetScreenMousePosition: HwndSource not found, using less reliable method.");
-
                     return AssociatedObject.PointToScreen(Mouse.GetPosition(AssociatedObject));
                 }
             }
-            Debug.WriteLine("GetScreenMousePosition: GetCursorPos failed.");
             return new Point(0, 0); 
         }
 
@@ -331,7 +286,6 @@ namespace RackMonitor.Behaviors
 
         public static T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
         {
-            // ... (unchanged) ...
             if (parent == null) return null;
             for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
             {

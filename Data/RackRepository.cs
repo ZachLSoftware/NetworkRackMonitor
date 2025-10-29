@@ -110,6 +110,8 @@ namespace RackMonitor.Data
                 SecondIPAddress = device.SecondIPAddress,
                 MacAddress = (device as ComputerDevice)?.MacAddress,
                 IsWoLEnabled = (device as ComputerDevice)?.IsWolEnabled ?? false,
+                Username = (device as ComputerDevice)?.pcCredentials.Username ?? "",
+                Password = (device as ComputerDevice)?.pcCredentials.EncryptedPassword ?? "",
                 AdderModel = (device as AdderDevice)?.Model ?? "None",
                 Ping = device.Ping
             };
@@ -155,10 +157,11 @@ namespace RackMonitor.Data
                 device.SecondIPAddress = dto.SecondIPAddress;
                 device.Ping = dto.Ping;
             }
-            if (device is ComputerDevice)
+            if (device is ComputerDevice computer)
             {
-                (device as ComputerDevice).MacAddress = dto.MacAddress;
-                (device as ComputerDevice).IsWolEnabled = dto.IsWoLEnabled;
+                computer.MacAddress = dto.MacAddress;
+                computer.IsWolEnabled = dto.IsWoLEnabled;
+                computer.pcCredentials = new Credentials(dto.Username, dto.Password);
             }
             if (device is AdderDevice)
             {

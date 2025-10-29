@@ -1,5 +1,6 @@
 ﻿using RackMonitor.Extensions;
 using RackMonitor.Models;
+using RackMonitor.Security;
 using RackMonitor.Services;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -7,6 +8,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Security;
 using System.Windows;
 using System.Windows.Input;
@@ -22,8 +24,34 @@ namespace RackMonitor.ViewModels
         public List<string> AvailableAdderModels { get; } = new List<string> { "Other", "ASP001", "ALIF4000T", "ALIF2100T" };
         public bool IsBusy = false;
 
+        private bool _isCredentialsPopupOpen;
+        public bool IsCredentialsPopupOpen
+        {
+            get => _isCredentialsPopupOpen;
+            set { _isCredentialsPopupOpen = value; OnPropertyChanged(); }
+        }
+
+        private string _popupUsername;
+        public string PopupUsername // Bound to TextBox
+        {
+            get => _popupUsername;
+            set { _popupUsername = value; OnPropertyChanged(); }
+        }
+        public bool HasEncryptedPassword =>
+            CurrentDevice is ComputerDevice cd && !string.IsNullOrEmpty(cd.pcCredentials.EncryptedPassword);
+
+        private SecureString _popupPassword;
+        public SecureString PopupPassword // Bound to PasswordBox via Assistant
+        {
+            get => _popupPassword;
+            set { _popupPassword = value; OnPropertyChanged(); }
+        }
+
         public ICommand SaveCommand { get; }
         public ICommand ShutdownCommand { get; }
+        public ICommand OpenCredentialsPopupCommand { get; }
+        public ICommand SaveCredentialsCommand { get; }
+        public ICommand CancelCredentialsCommand { get; }
 
         public List<string> hiddenFields = new List<string>
         {
@@ -43,6 +71,10 @@ namespace RackMonitor.ViewModels
 
             SaveCommand = new RelayCommand(ExecuteSave);
             ShutdownCommand = new RelayCommand(ExecuteShutdown, CanShutdown);
+            OpenCredentialsPopupCommand = new RelayCommand(ExecuteOpenCredentialsPopup);
+            SaveCredentialsCommand = new RelayCommand(ExecuteSaveCredentials, CanExecuteSaveCredentials);
+            CancelCredentialsCommand = new RelayCommand(ExecuteCancelCredentials);
+            OnPropertyChanged(nameof(HasEncryptedPassword));
         }
 
         public bool CanShutdown(object parameter)
@@ -50,50 +82,145 @@ namespace RackMonitor.ViewModels
             return this.CurrentDevice is ComputerDevice && !IsBusy;
         }
 
+
+        private void ExecuteOpenCredentialsPopup(object parameter)
+        {
+            // Pre-populate with current values if they exist on the device
+            if (CurrentDevice is ComputerDevice cd)
+            {
+                PopupUsername = cd.pcCredentials.Username != null ? cd.pcCredentials.Username : ""; // Assumes Username property exists on ComputerDevice
+                                             // Cannot easily pre-populate PasswordBox from encrypted string
+                PopupPassword?.Clear(); // Clear any previous SecureString
+                PopupPassword = new SecureString(); // Reset SecureString
+                OnPropertyChanged(nameof(PopupPassword)); // Notify binding helper
+
+            }
+            IsCredentialsPopupOpen = true;
+            OnPropertyChanged(nameof(HasEncryptedPassword));
+        }
+        private bool CanExecuteSaveCredentials(object parameter)
+        {
+            // Basic validation
+            return !string.IsNullOrWhiteSpace(PopupUsername) && PopupPassword != null && PopupPassword.Length > 0;
+        }
+
+        private void ExecuteSaveCredentials(object parameter) // Parameter is not directly used here
+        {
+            if (!CanExecuteSaveCredentials(null)) return; // Double check validation
+
+            string plainTextPassword = null;
+            string encryptedPassword = null;
+
+            try
+            {
+                plainTextPassword = ConvertToUnsecureString(PopupPassword);
+                encryptedPassword = ProtectionHelper.ProtectString(plainTextPassword);
+
+                if (encryptedPassword == null)
+                {
+                    MessageBox.Show("Failed to encrypt password.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                var newCredentials = new Credentials(PopupUsername, encryptedPassword);
+                UpdateDeviceCredentials(newCredentials);
+                IsCredentialsPopupOpen = false;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error saving credentials: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                // Clear sensitive data regardless of success/failure
+                PopupPassword?.Clear();
+                PopupPassword = new SecureString();
+                OnPropertyChanged(nameof(PopupPassword)); 
+                plainTextPassword = null;
+            }
+        }
+
+        private void ExecuteCancelCredentials(object parameter)
+        {
+            IsCredentialsPopupOpen = false;
+            // Clear temporary properties on cancel
+            PopupUsername = null; OnPropertyChanged(nameof(PopupUsername));
+            PopupPassword?.Clear();
+            PopupPassword = new SecureString();
+            OnPropertyChanged(nameof(PopupPassword));
+        }
+        private void UpdateDeviceCredentials(Credentials credentials)
+        {
+            // Assumes ComputerDevice has Username and EncryptedPassword properties
+            if (CurrentDevice is ComputerDevice computer)
+            {
+                computer.pcCredentials.Username = credentials.Username;
+                computer.pcCredentials.EncryptedPassword = credentials.EncryptedPassword;
+                Debug.WriteLine($"Username: {computer.pcCredentials.Username} Password: {computer.pcCredentials.EncryptedPassword}");
+
+                Saved?.Invoke();
+            }
+            else
+            {
+                Debug.WriteLine("Warning: Tried to set credentials on a non-computer device.");
+            }
+        }
         public async void ExecuteShutdown(object parameter) // parameter is not used here
         {
             // Use the ViewModel's CurrentDevice property
             if (this.CurrentDevice is ComputerDevice computer)
             {
+                computer.HasStatus = true;
+                computer.StatusMessage = "Attempting Shutdown";
+                computer.IsShuttingDown = true;
                 string targetIp = computer.IPAddressInfo?.Address;
 
                 if (!string.IsNullOrEmpty(targetIp))
                 {
-                    // --- !!! WARNING: HARDCODED CREDENTIALS - REPLACE WITH SECURE METHOD !!! ---
-                    //string username = "YourDomain\\YourAdminUser"; // e.g., "MYDOMAIN\\Admin" or ".\LocalAdmin"
-                    //SecureString password = new SecureString();
-                    // You MUST get the password securely (e.g., from PasswordBox) and append char by char
-                    // Example: foreach (char c in plainTextPassword) { password.AppendChar(c); }
-                    //"YourSecurePassword".ToList().ForEach(password.AppendChar); // Temporary, insecure way for testing only!
-                    //password.MakeReadOnly();
-                    // --- !!! END WARNING !!! ---
+                    IsBusy = true;
+                    computer.IsShuttingDown = true;
 
-                    IsBusy = true; // Set busy flag
+                    SecureString password = new SecureString();
+                    foreach(char c in ProtectionHelper.UnprotectString(computer.pcCredentials.EncryptedPassword))
+                    {
+                        password.AppendChar(c);
+                    }
+                    password.MakeReadOnly();
+                    string result = await ShutdownService.ShutdownComputerAsync(targetIp, computer.pcCredentials.Username, password);
 
-                    // Call the service asynchronously
-                    string result = await ShutdownService.ShutdownComputerAsync(targetIp, "test", null);
+                    IsBusy = false;
 
-                    IsBusy = false; // Clear busy flag
-
-                    // Dispose SecureString immediately after use
-                    //password.Dispose();
+                    password.Dispose();
 
                     // Show result message
-                    if (!string.IsNullOrEmpty(result)) // An error occurred
+                    if (!string.IsNullOrEmpty(result))
                     {
-                        MessageBox.Show($"Shutdown attempt failed:\n{result}", "Shutdown Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        computer.StatusMessage = result;
                     }
                     else // Success
                     {
-                        MessageBox.Show($"Shutdown command sent successfully to {targetIp}.", "Shutdown Initiated", MessageBoxButton.OK, MessageBoxImage.Information);
+                        computer.StatusMessage = "Shutdown Command Sent";
                     }
+                    computer.IsShuttingDown = false;
                 }
-                else
-                {
-                    MessageBox.Show("Cannot execute shutdown: IP Address is missing for this device.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+
             }
-            // No 'else' needed as CanExecute should prevent this unless CurrentDevice changes unexpectedly
+        }
+        private static string ConvertToUnsecureString(SecureString securePassword)
+        {
+            if (securePassword == null)
+                return string.Empty;
+
+            IntPtr unmanagedString = IntPtr.Zero;
+            try
+            {
+                unmanagedString = Marshal.SecureStringToGlobalAllocUnicode(securePassword);
+                return Marshal.PtrToStringUni(unmanagedString);
+            }
+            finally
+            {
+                Marshal.ZeroFreeGlobalAllocUnicode(unmanagedString);
+            }
         }
 
         private void PopulateProperties(RackDevice device)

@@ -14,7 +14,7 @@ namespace RackMonitor.Services
     public static class ShutdownService
     {
 
-        public static async Task<string> ShutdownComputerAsync(string targetIpAddress, string userName, SecureString password)
+        public static async Task<string> ShutdownComputerAsync(string targetIpAddress, string userName, SecureString password, int flag = 5)
         {
             if (string.IsNullOrWhiteSpace(targetIpAddress))
             {
@@ -26,37 +26,36 @@ namespace RackMonitor.Services
             //}
 
             // Wrap the synchronous WMI code in Task.Run to execute it on a background thread
+#pragma warning disable CS8603 // Possible null reference return.
             return await Task.Run(() =>
             {
-            var securePassword = new SecureString();
+                SecureString securePassword = new SecureString();
 
                 try
                 {
                     var options = new ConnectionOptions
                     {
-                        Username = "infinity\\support",
-                        SecurePassword = securePassword,
+                        Username = userName,
+                        SecurePassword = password,
                         Impersonation = ImpersonationLevel.Impersonate,
                         Authentication = AuthenticationLevel.PacketPrivacy,
                         EnablePrivileges = true // Required for shutdown
                     };
 
                     var scope = new ManagementScope($@"\\{targetIpAddress}\root\cimv2", options);
-                    scope.Connect(); // This blocks, but it's on a background thread
+                    scope.Connect();
 
-                    Debug.WriteLine($"WMI: Connected to {targetIpAddress}.");
 
                     var query = new SelectQuery("Win32_OperatingSystem");
                     using (var searcher = new ManagementObjectSearcher(scope, query))
                     {
                         bool commandSent = false;
-                        // Use Get() which executes the query (also blocks)
                         foreach (ManagementObject os in searcher.Get())
                         {
                             ManagementBaseObject inParams = os.GetMethodParameters("Win32Shutdown");
-                            // Flags: 1=Shutdown, 4=Force, 8=Reboot. Combine as needed. 5 = Shutdown + Force
-                            inParams["Flags"] = 5;
-                            inParams["Reserved"] = "0"; // Use "0" not 0 for this method typically
+                            // Flags: 1=Shutdown, 4=Force, 2=Reboot. Combine as needed. 5 = Shutdown + Force
+                            inParams["Flags"] = flag;
+                            inParams["Reserved"] = "0";
 
                             Debug.WriteLine("WMI: Sending shutdown command...");
 
@@ -84,7 +83,7 @@ namespace RackMonitor.Services
                             return "Could not find operating system object via WMI to invoke shutdown.";
                         }
                     }
-                    return null; // Indicate success
+                    return null; 
                 }
                 catch (UnauthorizedAccessException ex)
                 {
@@ -94,20 +93,20 @@ namespace RackMonitor.Services
                 catch (System.Runtime.InteropServices.COMException ex)
                 {
                     Debug.WriteLine($"WMI COM Error: {ex.Message}");
-                    // Common errors: RPC server unavailable (firewall, service stopped), invalid namespace
                     return $"WMI Connection Error to {targetIpAddress}. Check network, firewall, and WMI service. Details: {ex.Message}";
                 }
-                catch (ManagementException ex) // More specific WMI errors
+                catch (ManagementException ex) 
                 {
                     Debug.WriteLine($"WMI Management Error: {ex.Message}");
                     return $"WMI Error on {targetIpAddress}. Details: {ex.Message}";
                 }
-                catch (Exception ex) // Catch-all for other unexpected errors
+                catch (Exception ex) 
                 {
                     Debug.WriteLine($"WMI operation failed unexpectedly: {ex.Message}");
                     return $"WMI operation failed unexpectedly: {ex.Message}";
                 }
             });
+#pragma warning restore CS8603 // Possible null reference return.
         }
     }
 

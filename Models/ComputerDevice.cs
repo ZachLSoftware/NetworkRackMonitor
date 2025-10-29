@@ -32,6 +32,21 @@ namespace RackMonitor.Models
             set
             {
                 _isWoLEnabled = value;
+                OnPropertyChanged(nameof(IsWolEnabled));
+            }
+        }
+
+        private bool _isShuttingDown = false;
+        public bool IsShuttingDown
+        {
+            get => _isShuttingDown;
+            set
+            {
+                if (_isShuttingDown != value)
+                {
+                    _isShuttingDown = value;
+                    OnPropertyChanged(nameof(IsShuttingDown));
+                }
             }
         }
 
@@ -49,6 +64,13 @@ namespace RackMonitor.Models
                     OnPropertyChanged(nameof(AllowRemoteShutdown));
                 }
             }
+        }
+
+        private Credentials _pcCredentials = new Credentials("","");
+        public Credentials pcCredentials
+        {
+            get => _pcCredentials;
+            set { _pcCredentials = value; }
         }
         public ComputerDevice() : base()
         {

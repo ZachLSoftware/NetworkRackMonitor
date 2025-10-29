@@ -52,6 +52,8 @@ namespace RackMonitor.Data
         public string OperatingSystem { get; set; }
         public int PortCount { get; set; }
         public bool IsWoLEnabled { get; set; }
+        public string Username { get; set; }
+        public string Password { get; set; }
     }
     
 }
