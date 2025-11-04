@@ -9,10 +9,6 @@
              d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
         <ResourceDictionary>
-        <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="/Resources/MainWindowStyles.xaml"/>
-                <ResourceDictionary Source="/Resources/RackUnitDataTemplate.xaml"/>
-            </ResourceDictionary.MergedDictionaries>
 
             <ControlTemplate x:Key="ContentOnlyTemplate" TargetType="{x:Type Button}">
                 <ContentPresenter />
@@ -33,8 +29,8 @@
                         <!-- Settings Closed, Details Closed -->
                         <MultiDataTrigger>
                             <MultiDataTrigger.Conditions>
-                                <Condition Binding="{Binding DataContext.IsSettingsPanelOpen, ElementName=RackWindow}" Value="False"/>
-                                <Condition Binding="{Binding DataContext.IsDetailsPanelOpen, ElementName=RackWindow}" Value="False"/>
+                                <Condition Binding="{Binding DataContext.IsSettingsPanelOpen}" Value="False"/>
+                                <Condition Binding="{Binding DataContext.IsDetailsPanelOpen}" Value="False"/>
                             </MultiDataTrigger.Conditions>
                             <Setter Property="Grid.Column" Value="0"/>
                             <Setter Property="Grid.ColumnSpan" Value="3"/>
@@ -44,8 +40,8 @@
                         <!-- Settings Open, Details Closed -->
                         <MultiDataTrigger>
                             <MultiDataTrigger.Conditions>
-                                <Condition Binding="{Binding DataContext.IsSettingsPanelOpen, ElementName=RackWindow}" Value="True"/>
-                                <Condition Binding="{Binding DataContext.IsDetailsPanelOpen, ElementName=RackWindow}" Value="False"/>
+                                <Condition Binding="{Binding DataContext.IsSettingsPanelOpen}" Value="True"/>
+                                <Condition Binding="{Binding DataContext.IsDetailsPanelOpen}" Value="False"/>
                             </MultiDataTrigger.Conditions>
                             <Setter Property="Grid.Column" Value="1"/>
                             <Setter Property="Grid.ColumnSpan" Value="2"/>
@@ -55,8 +51,8 @@
                         <!-- Settings Closed, Details Open -->
                         <MultiDataTrigger>
                             <MultiDataTrigger.Conditions>
-                                <Condition Binding="{Binding DataContext.IsSettingsPanelOpen, ElementName=RackWindow}" Value="False"/>
-                                <Condition Binding="{Binding DataContext.IsDetailsPanelOpen, ElementName=RackWindow}" Value="True"/>
+                                <Condition Binding="{Binding DataContext.IsSettingsPanelOpen}" Value="False"/>
+                                <Condition Binding="{Binding DataContext.IsDetailsPanelOpen}" Value="True"/>
                             </MultiDataTrigger.Conditions>
                             <Setter Property="Grid.Column" Value="0"/>
                             <!-- Start at left -->
@@ -126,8 +122,9 @@
                 <!-- Main Content Scroller -->
                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="10,0,10,10">
                     <!-- Changed to Visible -->
-                    <ItemsControl  x:Name="MainRackItemsControl" ItemsSource="{Binding DataContext.RackUnits, ElementName=RackWindow}"
-                           ItemTemplate="{StaticResource UnifiedRackUnitTemplate}"/>
+                    <ItemsControl  x:Name="MainRackItemsControl" 
+                                   ItemsSource="{Binding SelectedRackViewModel.RackUnits}"
+                                   ItemTemplate="{StaticResource UnifiedRackUnitTemplate}"/>
                 </ScrollViewer>
             </Grid>
         </Border>
@@ -141,14 +138,30 @@
                     <Setter Property="Visibility" Value="Collapsed"/>
                     <!-- Default hidden -->
                     <Style.Triggers>
-                        <DataTrigger Binding="{Binding DataContext.IsDetailsPanelOpen, ElementName=RackWindow}" Value="True">
+                        <DataTrigger Binding="{Binding DataContext.IsDetailsPanelOpen}" Value="True">
                             <Setter Property="Visibility" Value="Visible"/>
                         </DataTrigger>
                     </Style.Triggers>
                 </Style>
             </Border.Style>
             <!-- Host the UserControl -->
-            <usercontrols:DeviceDetailsView DataContext="{Binding DataContext.SelectedDeviceDetails, ElementName=RackWindow}"/>
+            <usercontrols:DeviceDetailsView DataContext="{Binding DataContext.SelectedDeviceDetails}"/>
+        </Border>
+        <Border Grid.Column="1" BorderBrush="{StaticResource AccentBrush}" BorderThickness="3,0,0,0" Width="400"
+                 Background="{StaticResource PanelBackgroundBrush}">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                    <!-- Default hidden -->
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsDetailsPanelOpen}" Value="True">
+                            <Setter Property="Visibility" Value="Visible"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+
+            <usercontrols:DeviceDetailsView DataContext="{Binding SelectedDeviceDetails}"/>
         </Border>
     </Grid>
 </UserControl>

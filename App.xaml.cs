@@ -17,52 +17,33 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
-        // 1. Create a single, shared instance of the repository.
         var rackRepository = new RackRepository();
+        var rackStateDtos = rackRepository.LoadAllRackData();
+        if (!rackStateDtos.Any())
+        {
+            var newRackWindow = new NewRackWindow();
+            bool? result = newRackWindow.ShowDialog();
 
-        // 2. Create the main ViewModel and give it the repository.
-        var rackViewModel = new MainViewModel(rackRepository);
+            if (result == true)
+            {
+                rackRepository.CreateAndSaveNewRack(newRackWindow.RackName);
+            }
+            else
+            {
+                Application.Current.Shutdown();
+                return;
+            }
+        }
+        var mainViewModel = new MainViewModel(rackRepository);
 
-
-        // 3. Create the main window and set its DataContext.
         var mainWindow = new MainWindow
         {
-            DataContext = rackViewModel
+            DataContext = mainViewModel
             
         };
 
         mainWindow.Show();
 
-        MonitoringService monitor = new MonitoringService(rackRepository);
-        monitor.StartMonitoring();
-        monitor.updateDevices += () =>
-        {
-            rackRepository.SaveState();
-        };
-
-        rackViewModel.PingToggled += (object sender, PingServiceToggledEventArgs e) =>
-        {
-            Debug.WriteLine($"In event handler. e: {e.IsEnabled}, monitor: {monitor.IsRunning}");
-            if (e.IsEnabled && !monitor.IsRunning)
-            {
-                monitor.StartMonitoring();
-            }
-            else if (!e.IsEnabled && monitor.IsRunning)
-            {
-                monitor.StopMonitoring();
-            }
-        };
-
-        rackViewModel.WoLToggled += (object sender, WoLServiceToggledEventArgs e) =>
-        {
-            monitor.IsWoLRunning = e.IsEnabled;
-        };
-
-        // 4. In the future, your monitoring service would be created here
-        //    and also be given the SAME 'rackRepository' instance.
-        //
-        // var monitoringService = new MonitoringService(rackRepository);
-        // monitoringService.StartMonitoring();
     }
 }
 

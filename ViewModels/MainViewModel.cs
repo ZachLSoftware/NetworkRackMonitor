@@ -26,13 +26,36 @@ namespace RackMonitor.ViewModels
         public ICommand SaveCredentialsCommand { get; }
         public ICommand CancelCredentialsCommand { get; }
         public ICommand ShutdownAllSelectedRackPCsCommand { get; }
+        public ICommand ToggleSettingsPanelCommand { get; }
         public ICommand ToggleWoLServiceCommand { get; }
         public ICommand TogglePingServiceCommand { get; }
+
         public EventHandler<PingServiceToggledEventArgs> PingToggled;
         public EventHandler<WoLServiceToggledEventArgs> WoLToggled;
 
+        // --- PROXY COMMANDS ---
+        public ICommand DropItemCommand { get; }
+        public ICommand ShowDeviceDetailsCommand { get; }
+        public ICommand ChangeDeviceTypeCommand { get; }
+        public ICommand AddSlotCommand { get; }
+        public ICommand MergeUnitCommand { get; }
+        // --- END PROXY COMMANDS ---
+
         public ObservableCollection<RackViewModel> AllRacks = new ObservableCollection<RackViewModel>();
         public List<string> RackNames = new List<string>();
+        private int _numberOfUnits = 12;
+        public int NumberOfUnits
+        {
+            get => _numberOfUnits;
+            set
+            {
+                if (_numberOfUnits != value)
+                {
+                    _numberOfUnits = value;
+                    OnPropertyChanged(nameof(NumberOfUnits));
+                }
+            }
+        }
 
         private bool _isPingServiceRunning = true;
         public bool IsPingServiceRunning
@@ -42,6 +65,21 @@ namespace RackMonitor.ViewModels
             {
                 _isPingServiceRunning = value;
                 OnPropertyChanged(nameof(IsPingServiceRunning));
+            }
+        }
+
+        private bool _isSettingsPanelOpen = true;
+        public bool IsSettingsPanelOpen
+        {
+            get => _isSettingsPanelOpen;
+            set
+            {
+
+                if (_isSettingsPanelOpen != value)
+                {
+                    _isSettingsPanelOpen = value;
+                    OnPropertyChanged(nameof(IsSettingsPanelOpen));
+                }
             }
         }
 
@@ -120,17 +158,17 @@ namespace RackMonitor.ViewModels
                 _repository = repository;
                 List<RackStateDto> rackStateDtos = _repository.LoadAllRackData();
                 AllRacks = new ObservableCollection<RackViewModel>();
-                if (rackStateDtos == null)
-                {
-
-                }
                 foreach (RackStateDto rackDto in rackStateDtos)
                 {
                     if (!RackNames.Contains(rackDto.RackName)) { RackNames.Add(rackDto.RackName); }
                     AllRacks.Add(new RackViewModel(_repository, rackDto));
                 }
-                IsPingServiceRunning = _repository.GlobalPingEnabled;
-                IsWoLServiceRunning = _repository.GlobalWoLEnabled;
+
+                SelectedRackViewModel = AllRacks.FirstOrDefault();
+                IsPingServiceRunning = SelectedRackViewModel?.IsPingServiceRunning ?? false;
+                IsWoLServiceRunning = SelectedRackViewModel?.IsWoLServiceRunning ?? false;
+                NumberOfUnits = SelectedRackViewModel?.NumberOfUnits ?? 12;
+                
 
                 //Command Bindings
                
@@ -141,28 +179,52 @@ namespace RackMonitor.ViewModels
                 CancelCredentialsCommand = new RelayCommand(ExecuteCancelGlobalCredentials);
                 ShutdownAllSelectedRackPCsCommand = new RelayCommand(ExecuteShutdownAll);
 
+                //proxy commands
+                DropItemCommand = new RelayCommand(ExecuteDropItem, CanExecuteOnSelectedRack);
+                ShowDeviceDetailsCommand = new RelayCommand(ExecuteShowDeviceDetails, CanExecuteOnSelectedRack);
+                ChangeDeviceTypeCommand = new RelayCommand(ExecuteChangeDeviceType, CanExecuteOnSelectedRack);
+                AddSlotCommand = new RelayCommand(ExecuteAddSlot, CanExecuteOnSelectedRack);
+                MergeUnitCommand = new RelayCommand(ExecuteMergeUnit, CanExecuteOnSelectedRack);
+
+
                 //Create the initial rack
                 //_repository.UpdateRackSize(NumberOfUnits);
             }
         }
 
-        public void MoveOrSwapDevice(SlotViewModel sourceSlot, SlotViewModel targetSlot)
+
+        // --- PROXY COMMAND PREDICATE ---
+        private bool CanExecuteOnSelectedRack(object parameter)
         {
-            RackDevice sourceDevice = sourceSlot.Device;
-            RackDevice targetDevice = targetSlot.Device;
-
-            // Perform the swap/move
-            targetSlot.Device = sourceDevice; // Move source device to target
-            sourceSlot.Device = targetDevice; // Move target device (or null) to source
-
-            // Save the updated state
-            SelectedRackViewModel.SaveRack();
+            // This single predicate works for all proxy commands
+            return SelectedRackViewModel != null;
         }
 
+        // --- PROXY COMMAND EXECUTION METHODS ---
+        private void ExecuteDropItem(object parameter)
+        {
+            SelectedRackViewModel?.DropItemCommand.Execute(parameter);
+        }
 
+        private void ExecuteShowDeviceDetails(object parameter)
+        {
+            SelectedRackViewModel?.ShowDeviceDetailsCommand.Execute(parameter);
+        }
 
+        private void ExecuteChangeDeviceType(object parameter)
+        {
+            SelectedRackViewModel?.ChangeDeviceTypeCommand.Execute(parameter);
+        }
 
-       
+        private void ExecuteAddSlot(object parameter)
+        {
+            SelectedRackViewModel?.AddSlotCommand.Execute(parameter);
+        }
+
+        private void ExecuteMergeUnit(object parameter)
+        {
+            SelectedRackViewModel?.MergeUnitCommand.Execute(parameter);
+        }
 
         private bool CanExecuteSaveGlobalCredentials(object parameter)
         {

@@ -1,0 +1,48 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <RootNamespace>RackMonitor</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Assets\Icons\ALIF1002.png" />
+    <None Remove="Assets\Icons\ALIF1100T.png" />
+    <None Remove="Assets\Icons\ALIF2100R.png" />
+    <None Remove="Assets\Icons\ALIF2100T.png" />
+    <None Remove="Assets\Icons\ALIF3000R.png" />
+    <None Remove="Assets\Icons\ALIF4000R.png" />
+    <None Remove="Assets\Icons\ALIF4000T.png" />
+    <None Remove="Assets\Icons\ASP001.png" />
+    <None Remove="Assets\Icons\PC.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MahApps.Metro.IconPacks" Version="6.1.0" />
+    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.5.4" />
+    <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.135" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\Icons\ALIF1002.png" />
+    <Resource Include="Assets\Icons\ALIF1100T.png" />
+    <Resource Include="Assets\Icons\ALIF2100R.png" />
+    <Resource Include="Assets\Icons\ALIF2100T.png" />
+    <Resource Include="Assets\Icons\ALIF3000R.png" />
+    <Resource Include="Assets\Icons\ALIF4000R.png" />
+    <Resource Include="Assets\Icons\ALIF4000T.png" />
+    <Resource Include="Assets\Icons\ASP001.png" />
+    <Resource Include="Assets\Icons\PC.png" />
+  </ItemGroup>
+
+	<ItemGroup>
+		<Reference Include="System.Management.Automation">
+			<HintPath>$(UserProfile)\.nuget\packages\microsoft.powershell.sdk\7.5.4\ref\net8.0\System.Management.Automation.dll</HintPath>
+		</Reference>
+	</ItemGroup>
+
+</Project>

@@ -72,7 +72,7 @@
                 </MultiDataTrigger.Conditions>
                 <Setter Property="Fill" Value="{StaticResource StatusOnlineBrush}"/>
             </MultiDataTrigger>
-            <DataTrigger Binding="{Binding DataContext.IsPingServiceRunning, ElementName=RackWindow}" Value="false">
+            <DataTrigger Binding="{Binding DataContext.IsPingServiceRunning}" Value="false">
                 <Setter Property="Fill" Value="{StaticResource StatusDisabledBrush}"/>
             </DataTrigger>
         </Style.Triggers>
@@ -239,7 +239,7 @@
     <ContextMenu x:Key="SlotContextMenu">
         <MenuItem Header="Add Device">
             <MenuItem Header="Adder Device"
-                  Command="{Binding PlacementTarget.Tag.ChangeDeviceTypeCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                  Command="{Binding PlacementTarget.Tag.SelectedRackViewModel.ChangeDeviceTypeCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
                 <MenuItem.CommandParameter>
                     <MultiBinding Converter="{x:Static local:TupleConverter.Instance}">
                         <Binding Path="."/>
@@ -248,7 +248,7 @@
                 </MenuItem.CommandParameter>
             </MenuItem>
             <MenuItem Header="Computer"
-                  Command="{Binding PlacementTarget.Tag.ChangeDeviceTypeCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                  Command="{Binding PlacementTarget.Tag.SelectedRackViewModel.ChangeDeviceTypeCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
                 <MenuItem.CommandParameter>
                     <MultiBinding Converter="{x:Static local:TupleConverter.Instance}">
                         <Binding Path="."/>
@@ -257,7 +257,7 @@
                 </MenuItem.CommandParameter>
             </MenuItem>
             <MenuItem Header="Network Device"
-                  Command="{Binding PlacementTarget.Tag.ChangeDeviceTypeCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                  Command="{Binding PlacementTarget.Tag.SelectedRackViewModel.ChangeDeviceTypeCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
                 <MenuItem.CommandParameter>
                     <MultiBinding Converter="{x:Static local:TupleConverter.Instance}">
                         <Binding Path="."/>

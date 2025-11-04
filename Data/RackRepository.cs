@@ -37,10 +37,14 @@ namespace RackMonitor.Data
             string cwdPath = Directory.GetCurrentDirectory();
             Debug.WriteLine(cwdPath);
             saveFolder = Path.Combine(cwdPath, "RackMonitorData");
-            string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            string appFolder = Path.Combine(appDataPath, "RackMonitor");
-            Directory.CreateDirectory(appFolder); // Ensure the folder exists.
-           // _saveFilePath = Path.Combine(appFolder, "rack_state.json");
+            if (!Directory.Exists(saveFolder))
+            {
+                Directory.CreateDirectory(saveFolder);
+            }
+           // string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+           // string appFolder = Path.Combine(appDataPath, "RackMonitor");
+           // Directory.CreateDirectory(appFolder); // Ensure the folder exists.
+           //// _saveFilePath = Path.Combine(appFolder, "rack_state.json");
 
 
             //LoadState();
@@ -58,10 +62,16 @@ namespace RackMonitor.Data
 
         public RackStateDto CreateAndSaveNewRack(string rackName)
         {
+            List<RackUnitDto> units = new List<RackUnitDto>();
+            for (int i=12; i>0; i--)
+            {
+                units.Add(new RackUnitDto() { UnitNumber=i, Slots = new List<SlotDto>() { new SlotDto()} });
+            }
             RackStateDto newDto = new RackStateDto
             {
                 NumberOfUnits = 12,
-                RackName = rackName
+                RackName = rackName,
+                Units = units
             };
 
             SaveRack(newDto);
@@ -92,10 +102,7 @@ namespace RackMonitor.Data
             return rackStateDto;
         }
 
-        public void CheckDeviceState(RackDevice device)
-        {
-            DeviceSaved?.Invoke(this, new DeviceSavedEventArgs(device));
-        }
+
 
         public void SaveGlobalCredentials(Credentials credentials)
         {

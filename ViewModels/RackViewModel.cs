@@ -1,4 +1,5 @@
-﻿using RackMonitor.Behaviors;
+﻿using Markdig.Extensions.SelfPipeline;
+using RackMonitor.Behaviors;
 using RackMonitor.Data;
 using RackMonitor.Models;
 using RackMonitor.Security;
@@ -13,6 +14,7 @@ using System.Reflection.Metadata;
 using System.Runtime.InteropServices;
 using System.Security;
 using System.Text.Json;
+using System.Threading;
 using System.Windows;
 using System.Windows.Input;
 
@@ -24,6 +26,7 @@ namespace RackMonitor.ViewModels
         private readonly RackRepository _repository;
         public ObservableCollection<RackUnitViewModel> RackUnits { get; }
         private RackStateDto _RackStateDto;
+        private MonitoringService monitor;
         private string _rackName;
         public string RackName
         {
@@ -53,22 +56,6 @@ namespace RackMonitor.ViewModels
             }
         }
 
-
-
-        private bool _isSettingsPanelOpen = true;
-        public bool IsSettingsPanelOpen
-        {
-            get => _isSettingsPanelOpen;
-            set
-            {
-                
-                if (_isSettingsPanelOpen != value)
-                {
-                    _isSettingsPanelOpen = value;
-                    OnPropertyChanged(nameof(IsSettingsPanelOpen));
-                }
-            }
-        }
         private DeviceDetailsViewModel _selectedDeviceDetails;
         public DeviceDetailsViewModel SelectedDeviceDetails
         {
@@ -159,17 +146,14 @@ namespace RackMonitor.ViewModels
         public ICommand GetAllIPsCommand { get; }
         public ICommand ToggleWoLServiceCommand { get; }
         public ICommand TogglePingServiceCommand { get; }
-        public ICommand ToggleSettingsPanelCommand { get; }
+
         public ICommand CloseDetailsPanelCommand { get; }
         public ICommand DropItemCommand { get; }
-        public ICommand OpenGlobalCredentialsPopupCommand { get; }
 
-        public ICommand SaveCredentialsCommand { get; }
-        public ICommand CancelCredentialsCommand { get; }
-        public ICommand ShutdownAllPCs { get;  }
 
         public EventHandler<PingServiceToggledEventArgs> PingToggled;
         public EventHandler<WoLServiceToggledEventArgs> WoLToggled;
+        public event EventHandler<DeviceSavedEventArgs> DeviceSaved;
         #endregion
 
         public RackViewModel(RackRepository repository, RackStateDto rackStateDto)
@@ -180,6 +164,12 @@ namespace RackMonitor.ViewModels
             _RackStateDto = rackStateDto;
             DtoToViewModel();
             NumberOfUnits = RackUnits.Count;
+            monitor = new MonitoringService(this);
+            monitor.StartMonitoring();
+            monitor.updateDevices += () =>
+            {
+                SaveRack();
+            };
 
 
             //Command Bindings
@@ -189,12 +179,8 @@ namespace RackMonitor.ViewModels
             ChangeDeviceTypeCommand = new RelayCommand(ExecuteChangeDeviceType, CanExecuteChangeDeviceType);
             ShowDeviceDetailsCommand = new RelayCommand(ExecuteShowDeviceDetails);
             GetAllIPsCommand = new RelayCommand(ExecuteGetAllIPs);
-            ToggleSettingsPanelCommand = new RelayCommand(ExecuteToggleSettingsPanel);
             CloseDetailsPanelCommand = new RelayCommand(ExecuteCloseDetailsPanel);
             DropItemCommand = new RelayCommand(ExecuteDropItem, CanExecuteDropItem);
-            OpenGlobalCredentialsPopupCommand = new RelayCommand(ExecuteOpenGlobalCredentialsPopup);
-            CancelCredentialsCommand = new RelayCommand(ExecuteCancelGlobalCredentials);
-            ShutdownAllPCs = new RelayCommand(ExecuteShutdownAll);
 
             //Create the initial rack
             //_repository.UpdateRackSize(NumberOfUnits);
@@ -295,6 +281,12 @@ namespace RackMonitor.ViewModels
             };
             _RackStateDto = rackStateDto;
             _repository.SaveRack(rackStateDto);
+            
+        }
+
+        public void CheckDeviceState(RackDevice device)
+        {
+            DeviceSaved?.Invoke(this, new DeviceSavedEventArgs(device));
         }
 
         private DeviceDto MapDeviceToDto(RackDevice device)
@@ -494,10 +486,6 @@ namespace RackMonitor.ViewModels
 
             ChangeDeviceType(slot, deviceType);
         }
-        private void ExecuteToggleSettingsPanel(object parameter)
-        {
-            IsSettingsPanelOpen = !IsSettingsPanelOpen;
-        }
 
         private void ExecuteShowDeviceDetails(object parameter)
         {
@@ -510,7 +498,7 @@ namespace RackMonitor.ViewModels
                 detailsViewModel.Saved += () =>
                 {
                     SaveRack();
-                    _repository.CheckDeviceState(slot.Device);
+                    CheckDeviceState(slot.Device);
                 };
 
                 // Set the ViewModel for the panel

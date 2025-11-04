@@ -1,5 +1,6 @@
 ﻿using RackMonitor.Data;
 using RackMonitor.Models;
+using RackMonitor.ViewModels;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -16,7 +17,7 @@ namespace RackMonitor.Services
 {
     public class MonitoringService
     {
-        private readonly RackRepository _repository;
+        private readonly RackViewModel _rackViewModel;
         private readonly PingService _pingService;
         private readonly ArpService _arpService;
         private readonly WoLService _wolService;
@@ -39,15 +40,15 @@ namespace RackMonitor.Services
             set { _isRunning = value; }
         }
 
-        public MonitoringService(RackRepository repository)
+        public MonitoringService(RackViewModel rackViewModel)
         {
-            _repository = repository;
+            _rackViewModel = rackViewModel;
             _pingService = new PingService();
             _arpService = new ArpService();
             _wolService = new WoLService();
 
             _pingService.PingCompleted += OnPingCompleted;
-            _repository.DeviceSaved += OnDeviceSaved;
+            _rackViewModel.DeviceSaved += OnDeviceSaved;
         }
 
         public void StartMonitoring()
@@ -74,7 +75,7 @@ namespace RackMonitor.Services
             Debug.WriteLine("Monitoring Started");
             while (!cancellationToken.IsCancellationRequested)
             {
-                var devices = _repository.GetAllDevices();
+                var devices = _rackViewModel.GetAllDevices();
                 _arpCache = _arpService.GetArpResult();
 
                 if (devices.Count > 0)
@@ -148,7 +149,7 @@ namespace RackMonitor.Services
 
         private void OnPingCompleted(object sender, PingEventArgs e)
         {
-            var device = _repository.FindDeviceByIP(e.IPAddress);
+            var device = _rackViewModel.FindDeviceByIP(e.IPAddress);
             if (device == null) return;
 
             Debug.WriteLine($"[Monitoring Service] Ping {e.IPAddress}: {(e.IsSuccessful ? "Success" : "Failed")}");
