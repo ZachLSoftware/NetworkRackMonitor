@@ -1,4 +1,5 @@
-﻿using RackMonitor.Extensions;
+﻿using RackMonitor.Data;
+using RackMonitor.Extensions;
 using RackMonitor.Models;
 using RackMonitor.Security;
 using RackMonitor.Services;
@@ -18,6 +19,7 @@ namespace RackMonitor.ViewModels
     public class DeviceDetailsViewModel : INotifyPropertyChanged
     {
         private readonly RackDevice _originalDevice;
+        private readonly RackRepository _repository;
         public RackDevice CurrentDevice { get; }
         public event Action Saved;
         public ObservableCollection<DevicePropertyViewModel> DeviceProperties { get; } = new ObservableCollection<DevicePropertyViewModel>();
@@ -60,11 +62,12 @@ namespace RackMonitor.ViewModels
             "Connected2"
         };
 
-        public DeviceDetailsViewModel(RackDevice device)
+        public DeviceDetailsViewModel(RackDevice device, RackRepository repo)
         {
             _originalDevice = device;
             //Get actual device
             CurrentDevice = device;
+            _repository = repo;
 
             // Use Reflection to populate the properties list
             PopulateProperties(device);
@@ -174,6 +177,7 @@ namespace RackMonitor.ViewModels
                 computer.StatusMessage = "Attempting Shutdown";
                 computer.IsShuttingDown = true;
                 string targetIp = computer.IPAddressInfo?.Address;
+                Credentials credentials = computer.UseGlobalCredentials ? _repository.GlobalCredentials : computer.pcCredentials;
 
                 if (!string.IsNullOrEmpty(targetIp))
                 {
@@ -181,12 +185,12 @@ namespace RackMonitor.ViewModels
                     computer.IsShuttingDown = true;
 
                     SecureString password = new SecureString();
-                    foreach(char c in ProtectionHelper.UnprotectString(computer.pcCredentials.EncryptedPassword))
+                    foreach(char c in ProtectionHelper.UnprotectString(credentials.EncryptedPassword))
                     {
                         password.AppendChar(c);
                     }
                     password.MakeReadOnly();
-                    string result = await ShutdownService.ShutdownComputerAsync(targetIp, computer.pcCredentials.Username, password);
+                    string result = await ShutdownService.ShutdownComputerAsync(targetIp, credentials.Username, password);
 
                     IsBusy = false;
 

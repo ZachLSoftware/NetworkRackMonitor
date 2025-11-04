@@ -21,7 +21,7 @@ public partial class App : Application
         var rackRepository = new RackRepository();
 
         // 2. Create the main ViewModel and give it the repository.
-        var rackViewModel = new RackViewModel(rackRepository);
+        var rackViewModel = new MainViewModel(rackRepository);
 
 
         // 3. Create the main window and set its DataContext.

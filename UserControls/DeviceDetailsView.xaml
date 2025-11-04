@@ -43,7 +43,7 @@
         <!-- Template for boolean properties using your ToggleButton -->
         <DataTemplate x:Key="BooleanPropertyTemplate">
             <!-- Ensure ToggleButton style matches dark theme -->
-            <userControl:ToggleButton IsOn="{Binding PropertyValue, Mode=TwoWay}" VerticalAlignment="Center" Margin="5" Height="25" Width="75" Command="{Binding SaveCommand}"/>
+            <userControl:ToggleButton IsOn="{Binding PropertyValue, Mode=TwoWay}" VerticalAlignment="Center" Margin="5" Height="25" Width="75" Command="{Binding DataContext.SaveCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
         </DataTemplate>
 
         <local:PropertyTemplateSelector x:Key="PropertySelector"

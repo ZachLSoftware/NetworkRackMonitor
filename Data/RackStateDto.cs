@@ -20,6 +20,7 @@ namespace RackMonitor.Data
     public class RackStateDto
     {
         public int NumberOfUnits { get; set; }
+        public string RackName { get; set; }
         public bool Ping { get; set; }
         public bool WoL { get; set; }
         public List<RackUnitDto> Units { get; set; } = new List<RackUnitDto>();

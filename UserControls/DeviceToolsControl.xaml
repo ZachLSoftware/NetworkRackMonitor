@@ -20,7 +20,8 @@
             
         </Grid>
         <Button x:Name="CredentialsButton" 
-                    Command="{Binding OpenCredentialsPopupCommand}">
+                    Command="{Binding OpenCredentialsPopupCommand}"  HorizontalAlignment="Left" MinWidth="80" Margin="0,15,0,0"
+                    Background="{StaticResource AccentBrush}" Foreground="White" BorderThickness="0">
 
             <StackPanel Orientation="Horizontal">
                 <iconPacks:PackIconFontAwesome6 Kind="KeySolid" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{StaticResource TextSecondaryBrush}"/>
@@ -39,7 +40,6 @@
             <!-- The Credentials Input UserControl -->
             <local:CredentialsInputControl Width="300"/>
         </Popup>
-        <Button x:Name="OpenCredentials" Content="Credentials" Command="{Binding OpenCredentialsPopupCommand}"/>
 
     </StackPanel>
 

@@ -1,6 +1,8 @@
 ﻿using RackMonitor.Behaviors;
 using RackMonitor.Data;
 using RackMonitor.Models;
+using RackMonitor.Security;
+using RackMonitor.Services;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -8,13 +10,33 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection.Metadata;
+using System.Runtime.InteropServices;
+using System.Security;
+using System.Text.Json;
+using System.Windows;
 using System.Windows.Input;
 
 namespace RackMonitor.ViewModels
 {
     public class RackViewModel : INotifyPropertyChanged
     {
+        #region properties
         private readonly RackRepository _repository;
+        public ObservableCollection<RackUnitViewModel> RackUnits { get; }
+        private RackStateDto _RackStateDto;
+        private string _rackName;
+        public string RackName
+        {
+            get => _rackName;
+            set
+            {
+                if (value != _rackName)
+                {
+                    _rackName = value;
+                    OnPropertyChanged(nameof(RackName));
+                }
+            }
+        }
 
         private int _numberOfUnits = 12;
         public int NumberOfUnits
@@ -30,6 +52,8 @@ namespace RackMonitor.ViewModels
                 }
             }
         }
+
+
 
         private bool _isSettingsPanelOpen = true;
         public bool IsSettingsPanelOpen
@@ -102,7 +126,30 @@ namespace RackMonitor.ViewModels
             }
         }
 
-        public ObservableCollection<RackUnitViewModel> RackUnits => _repository.RackUnits;
+        private bool _isGlobalCredentialsPopupOpen = false;
+        public bool IsGlobalCredentialsPopupOpen
+        {
+            get => _isGlobalCredentialsPopupOpen;
+            set { _isGlobalCredentialsPopupOpen = value; OnPropertyChanged(nameof(IsGlobalCredentialsPopupOpen)); }
+        }
+        private string _popupUsername;
+        public string PopupUsername
+        {
+            get => _popupUsername;
+            set { _popupUsername = value; OnPropertyChanged(nameof(PopupUsername)); }
+        }
+
+        private SecureString _popupPassword;
+        public SecureString PopupPassword
+        {
+            get => _popupPassword;
+            set { _popupPassword = value; OnPropertyChanged(nameof(PopupPassword)); }
+        }
+
+        // Read-only property to show status in MainWindow
+        public bool HasEncryptedPassword =>
+            !string.IsNullOrEmpty(_repository.GlobalCredentials.Username) && !string.IsNullOrEmpty(_repository.GlobalCredentials.EncryptedPassword);
+
 
         public ICommand UpdateRackSizeCommand { get; }
         public ICommand AddSlotCommand { get; }
@@ -115,17 +162,25 @@ namespace RackMonitor.ViewModels
         public ICommand ToggleSettingsPanelCommand { get; }
         public ICommand CloseDetailsPanelCommand { get; }
         public ICommand DropItemCommand { get; }
+        public ICommand OpenGlobalCredentialsPopupCommand { get; }
+
+        public ICommand SaveCredentialsCommand { get; }
+        public ICommand CancelCredentialsCommand { get; }
+        public ICommand ShutdownAllPCs { get;  }
 
         public EventHandler<PingServiceToggledEventArgs> PingToggled;
         public EventHandler<WoLServiceToggledEventArgs> WoLToggled;
+        #endregion
 
-
-        public RackViewModel(RackRepository repository)
+        public RackViewModel(RackRepository repository, RackStateDto rackStateDto)
         {
             _repository = repository;
-            IsPingServiceRunning = _repository.GlobalPingEnabled;
-            IsWoLServiceRunning = _repository.GlobalWoLEnabled;
-            NumberOfUnits = _repository.UnitNum;
+
+            RackUnits = new ObservableCollection<RackUnitViewModel>();
+            _RackStateDto = rackStateDto;
+            DtoToViewModel();
+            NumberOfUnits = RackUnits.Count;
+
 
             //Command Bindings
             UpdateRackSizeCommand = new RelayCommand(ExecuteUpdateRackSize);
@@ -134,17 +189,161 @@ namespace RackMonitor.ViewModels
             ChangeDeviceTypeCommand = new RelayCommand(ExecuteChangeDeviceType, CanExecuteChangeDeviceType);
             ShowDeviceDetailsCommand = new RelayCommand(ExecuteShowDeviceDetails);
             GetAllIPsCommand = new RelayCommand(ExecuteGetAllIPs);
-            ToggleWoLServiceCommand = new RelayCommand(ExecuteToggleWoL);
-            TogglePingServiceCommand = new RelayCommand(ExecuteTogglePing);
             ToggleSettingsPanelCommand = new RelayCommand(ExecuteToggleSettingsPanel);
             CloseDetailsPanelCommand = new RelayCommand(ExecuteCloseDetailsPanel);
             DropItemCommand = new RelayCommand(ExecuteDropItem, CanExecuteDropItem);
+            OpenGlobalCredentialsPopupCommand = new RelayCommand(ExecuteOpenGlobalCredentialsPopup);
+            CancelCredentialsCommand = new RelayCommand(ExecuteCancelGlobalCredentials);
+            ShutdownAllPCs = new RelayCommand(ExecuteShutdownAll);
 
             //Create the initial rack
             //_repository.UpdateRackSize(NumberOfUnits);
         }
 
+        #region data_methods
+        private void DtoToViewModel()
+        {
+            foreach (var unitDto in _RackStateDto.Units.OrderByDescending(u => u.UnitNumber))
+            {
+                var unitVM = new RackUnitViewModel { UnitNumber = unitDto.UnitNumber };
+                foreach (var slotDto in unitDto.Slots)
+                {
+                    unitVM.Slots.Add(new SlotViewModel
+                    {
+                        Device = MapDtoToDevice(slotDto.Device)
+                    });
+                }
+                RackUnits.Add(unitVM);
+            }
+        }
+        public RackDevice MapDtoToDevice(DeviceDto dto)
+        {
+            if (dto == null) return null;
+            RackDevice device = dto.TypeName switch
+            {
+                nameof(ComputerDevice) => new ComputerDevice(),
+                nameof(NetworkDevice) => new NetworkDevice(),
+                nameof(AdderDevice) => new AdderDevice(),
+                _ => null
+            };
+
+            if (device != null)
+            {
+                device.Name = dto.Name;
+                device.IPAddressInfo.Address = dto.IPAddressInfo.Address;
+                device.IPAddressInfo.SubnetMask = dto.IPAddressInfo.SubnetMask;
+                device.IPAddressInfo2.Address = dto.IPAddressInfo2.Address;
+                device.IPAddressInfo2.SubnetMask = dto.IPAddressInfo2.SubnetMask;
+                device.SecondIPAddress = dto.SecondIPAddress;
+                device.Ping = dto.Ping;
+            }
+            if (device is ComputerDevice computer)
+            {
+                computer.MacAddress = dto.MacAddress;
+                computer.IsWolEnabled = dto.IsWoLEnabled;
+                computer.pcCredentials = new Credentials(dto.Username, dto.Password);
+            }
+            if (device is AdderDevice)
+            {
+                (device as AdderDevice).Model = dto.AdderModel;
+            }
+            return device;
+        }
+
+        public void UpdateRackSize(int newSize)
+        {
+            if (newSize < 1) newSize = 1;
+            if (newSize > 100) newSize = 100;
+
+            int prevNum = RackUnits.Count;
+
+            if (prevNum < newSize)
+            {
+                int itemsToAdd = newSize - prevNum;
+                for (int i = 0; i < itemsToAdd; i++)
+                {
+                    int unitNumber = prevNum + i + 1;
+                    var newUnit = new RackUnitViewModel { UnitNumber = unitNumber };
+                    newUnit.Slots.Add(new SlotViewModel());
+                    RackUnits.Insert(0, newUnit);
+                }
+            }
+            else if (prevNum > newSize)
+            {
+                int itemsToRemove = prevNum - newSize;
+                for (int i = 0; i < itemsToRemove; i++)
+                {
+                    RackUnits.RemoveAt(0);
+                }
+            }
+
+            SaveRack();
+        }
+
+        public void SaveRack()
+        {
+            var rackStateDto = new RackStateDto
+            { 
+                Units = RackUnits.Select(UnitVM => new RackUnitDto
+                {
+                    UnitNumber = UnitVM.UnitNumber,
+                    Slots = UnitVM.Slots.Select(slotVM => new SlotDto
+                    {
+                        Device = MapDeviceToDto(slotVM.Device)
+                    }).ToList()
+                }).ToList(),
+            };
+            _RackStateDto = rackStateDto;
+            _repository.SaveRack(rackStateDto);
+        }
+
+        private DeviceDto MapDeviceToDto(RackDevice device)
+        {
+            if (device == null) return null;
+
+            DeviceDto dto = new DeviceDto
+            {
+                TypeName = device.GetType().Name,
+                Name = device.Name,
+                IPAddressInfo = new IPAddressInfoDto(device.IPAddressInfo.Address, device.IPAddressInfo.SubnetMask),
+                IPAddressInfo2 = new IPAddressInfoDto(device.IPAddressInfo2.Address, device.IPAddressInfo2.SubnetMask),
+                SecondIPAddress = device.SecondIPAddress,
+                MacAddress = (device as ComputerDevice)?.MacAddress,
+                IsWoLEnabled = (device as ComputerDevice)?.IsWolEnabled ?? false,
+                Username = (device as ComputerDevice)?.pcCredentials.Username ?? "",
+                Password = (device as ComputerDevice)?.pcCredentials.EncryptedPassword ?? "",
+                AdderModel = (device as AdderDevice)?.Model ?? "None",
+                Ping = device.Ping
+            };
+
+            return dto;
+        }
+
+        public List<RackDevice> GetAllDevices()
+        {
+            return RackUnits
+                .SelectMany(unit => unit.Slots)
+                .Select(slot => slot.Device)
+                .Where(device => device != null).ToList();
+        }
+
+        public RackDevice FindDeviceByIP(string ip)
+        {
+
+            return RackUnits
+                .SelectMany(unit => unit.Slots)
+                .Select(slot => slot.Device)
+                .FirstOrDefault(device => device != null && (device.IPAddressInfo.Address == ip || device.IPAddressInfo2.Address == ip));
+        }
+        #endregion
+
         #region execution_checks
+
+        private bool CanExecuteSaveGlobalCredentials(object parameter)
+        {
+            // Same validation logic
+            return !string.IsNullOrWhiteSpace(PopupUsername) && PopupPassword != null && PopupPassword.Length > 0;
+        }
         private bool CanExecuteDropItem(object parameter)
         {
             return parameter is DragDropData;
@@ -180,14 +379,38 @@ namespace RackMonitor.ViewModels
         #endregion
 
         #region command_executions
+
+        private void ExecuteOpenGlobalCredentialsPopup(object parameter)
+        {
+            // Pre-populate with current global values
+            PopupUsername = _repository.GlobalCredentials.Username;
+
+            // Always clear password input field
+            PopupPassword?.Dispose();
+            PopupPassword = new SecureString();
+            OnPropertyChanged(nameof(PopupPassword)); // Notify assistant to clear PasswordBox
+
+            IsGlobalCredentialsPopupOpen = true;
+            OnPropertyChanged(nameof(HasEncryptedPassword)); // Update status
+        }
+       
+        private void ExecuteCancelGlobalCredentials(object parameter)
+        {
+            IsGlobalCredentialsPopupOpen = false;
+            // Clear temporary properties
+            PopupUsername = null; OnPropertyChanged(nameof(PopupUsername));
+            PopupPassword?.Dispose();
+            PopupPassword = new SecureString();
+            OnPropertyChanged(nameof(PopupPassword));
+        }
         private void ExecuteUpdateRackSize(object parameter)
         {
-            _repository.UpdateRackSize(NumberOfUnits);
+            UpdateRackSize(NumberOfUnits);
         }
 
         private void ExecuteGetAllIPs(object parameter)
         {
-            var ipList = _repository.GetAllDevices();
+            var ipList = GetAllDevices();
             Debug.WriteLine("--- All Device IPs ---");
             if (ipList.Any())
             {
@@ -203,11 +426,51 @@ namespace RackMonitor.ViewModels
             Debug.WriteLine("----------------------");
         }
 
+        public void AddSlotToUnit(RackUnitViewModel unit)
+        {
+            if (unit != null && unit.Slots.Count < 4)
+            {
+                unit.Slots.Add(new SlotViewModel());
+            }
+            SaveRack();
+        }
+
+        public void MergeUnitToSingleSlot(RackUnitViewModel unit)
+        {
+            if (unit != null && unit.Slots.Count > 1)
+            {
+                // To preserve any device in the first slot, we can do this:
+                var firstSlot = unit.Slots.FirstOrDefault();
+                unit.Slots.Clear();
+                unit.Slots.Add(firstSlot ?? new SlotViewModel());
+            }
+            SaveRack();
+        }
+
+        public void ChangeDeviceType(SlotViewModel slot, string deviceType)
+        {
+            if (slot == null) return;
+
+            RackDevice newDevice = null;
+            switch (deviceType)
+            {
+                case "ComputerDevice": newDevice = new ComputerDevice(); break;
+                case "NetworkDevice": newDevice = new NetworkDevice(); break;
+                case "AdderDevice": newDevice = new AdderDevice(); break;
+            }
+
+            if (newDevice != null)
+            {
+                slot.Device = newDevice;
+            }
+            SaveRack();
+        }
+
         private void ExecuteAddSlot(object parameter)
         {
             if (parameter is RackUnitViewModel unit)
             {
-                _repository.AddSlotToUnit(unit);
+                AddSlotToUnit(unit);
             }
         }
 
@@ -217,7 +480,7 @@ namespace RackMonitor.ViewModels
         {
             if (parameter is RackUnitViewModel unit)
             {
-                _repository.MergeUnitToSingleSlot(unit);
+                MergeUnitToSingleSlot(unit);
             }
         }
 
@@ -229,7 +492,7 @@ namespace RackMonitor.ViewModels
             if (!(tuple.Item1 is SlotViewModel slot)) return;
             var deviceType = tuple.Item2;
 
-            _repository.ChangeDeviceType(slot, deviceType);
+            ChangeDeviceType(slot, deviceType);
         }
         private void ExecuteToggleSettingsPanel(object parameter)
         {
@@ -241,15 +504,13 @@ namespace RackMonitor.ViewModels
             if (parameter is SlotViewModel slot && slot.Device != null)
             {
                 // Create the ViewModel for the selected device
-                var detailsViewModel = new DeviceDetailsViewModel(slot.Device);
+                var detailsViewModel = new DeviceDetailsViewModel(slot.Device, _repository);
 
                 // Hook up the Saved event to trigger repository save and check
                 detailsViewModel.Saved += () =>
                 {
-                    _repository.SaveState();
+                    SaveRack();
                     _repository.CheckDeviceState(slot.Device);
-                    // Optionally refresh properties in the main list view if needed
-                    // OnPropertyChanged(nameof(RackUnits)); // Might be too broad
                 };
 
                 // Set the ViewModel for the panel
@@ -266,28 +527,155 @@ namespace RackMonitor.ViewModels
             }
         }
 
-        private void ExecuteToggleWoL(object parameter)
-        {
-            WoLToggled?.Invoke(this, new WoLServiceToggledEventArgs(IsWoLServiceRunning));
-            _repository.GlobalWoLEnabled = IsWoLServiceRunning;
-            _repository.SaveState();
-        }
-        private void ExecuteTogglePing(object parameter)
-        {
-            PingToggled?.Invoke(this, new PingServiceToggledEventArgs(IsPingServiceRunning));
-            _repository.GlobalPingEnabled = IsPingServiceRunning;
-            _repository.SaveState();
-        }
         private void ExecuteCloseDetailsPanel(object parameter)
         {
             IsDetailsPanelOpen = false;
-            // SelectedDeviceDetails is automatically cleared by the IsDetailsPanelOpen setter
         }
 
+        public async void ExecuteShutdownAll(object parameter)
+        {
 
+            // 1. Find all devices to shut down
+            var devicesToShutdown = RackUnits
+                .SelectMany(unit => unit.Slots)
+                .Select(slot => slot.Device)
+                .OfType<ComputerDevice>() // Get only ComputerDevices
+                .Where(computer => computer.AllowRemoteShutdown) // Check flag
+                .ToList();
+
+            if (devicesToShutdown.Count == 0)
+            {
+                MessageBox.Show("No devices are marked for remote shutdown.", "Global Shutdown", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            if (MessageBox.Show($"This will attempt to shut down {devicesToShutdown.Count} computer(s). Are you sure?",
+                               "Confirm Global Shutdown", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.No)
+            {
+                return;
+            }
+
+            // 2. Create a list of tasks
+            List<Task> shutdownTasks = new List<Task>();
+            // IsBusy = true; // TODO: Add IsBusy property to RackViewModel if needed
+
+            Debug.WriteLine($"Attempting to shut down {devicesToShutdown.Count} device(s)...");
+            foreach (var computer in devicesToShutdown)
+            {
+                // 3. Add the async helper method call (which returns a Task) to the list.
+                // This starts the task.
+                shutdownTasks.Add(ShutdownDeviceInternalAsync(computer));
+            }
+
+            // 4. Await all tasks to complete concurrently
+            try
+            {
+                await Task.WhenAll(shutdownTasks);
+                Debug.WriteLine("All shutdown tasks completed.");
+                MessageBox.Show("All shutdown commands have been sent.", "Global Shutdown", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                // This catch is for errors in Task.WhenAll, though individual errors
+                // are handled inside ShutdownDeviceInternalAsync
+                Debug.WriteLine($"Error during Task.WhenAll: {ex.Message}");
+            }
+            finally
+            {
+                // IsBusy = false; // Clear busy flag
+            }
+        }
+
+        /// <summary>
+        /// Contains the shutdown logic for a single device, designed to be run concurrently.
+        /// </summary>
+        private async Task ShutdownDeviceInternalAsync(ComputerDevice computer)
+        {
+            // NOTE: This assumes ComputerDevice and RackRepository have the required credential properties
+            // e.g., computer.UseGlobalCredentials, _repository.GlobalCredentials, computer.pcCredentials
+            try
+            {
+                computer.HasStatus = true;
+                computer.StatusMessage = "Attempting Shutdown...";
+                computer.IsShuttingDown = true;
+                string targetIp = computer.IPAddressInfo?.Address;
+
+                // Determine which credentials to use
+                Credentials credentials = computer.UseGlobalCredentials ? _repository.GlobalCredentials : computer.pcCredentials;
+
+                if (string.IsNullOrEmpty(targetIp))
+                {
+                    computer.StatusMessage = "Failed: No IP Address";
+                    return; // Can't proceed
+                }
+                if (credentials == null || string.IsNullOrEmpty(credentials.Username) || string.IsNullOrEmpty(credentials.EncryptedPassword))
+                {
+                    computer.StatusMessage = "Failed: No Credentials";
+                    return; // Can't proceed
+                }
+
+                SecureString password = new SecureString();
+                string plainTextPassword = null;
+                string result;
+
+                try
+                {
+                    // 1. Decrypt the stored password
+                    plainTextPassword = ProtectionHelper.UnprotectString(credentials.EncryptedPassword);
+                    if (plainTextPassword == null)
+                    {
+                        throw new Exception("Failed to decrypt password. (Invalid or wrong user?)");
+                    }
+
+                    // 2. Convert to SecureString
+                    foreach (char c in plainTextPassword)
+                    {
+                        password.AppendChar(c);
+                    }
+                    password.MakeReadOnly();
+
+                    // 3. Await the shutdown for THIS device
+                    result = await ShutdownService.ShutdownComputerAsync(targetIp, credentials.Username, password);
+                }
+                finally
+                {
+                    password.Dispose();
+                    if (plainTextPassword != null) plainTextPassword = null; // Clear from memory
+                }
+
+                // 4. Update status based on result
+                if (!string.IsNullOrEmpty(result)) // Error
+                {
+                    computer.StatusMessage = $"Failed: {result}";
+                }
+                else // Success
+                {
+                    computer.StatusMessage = "Shutdown Command Sent";
+                }
+            }
+            catch (Exception ex)
+            {
+                computer.StatusMessage = $"Failed: {ex.Message}";
+            }
+            finally
+            {
+                computer.IsShuttingDown = false; // Reset flag for this device
+            }
+        }
 
         #endregion
+        public void MoveOrSwapDevice(SlotViewModel sourceSlot, SlotViewModel targetSlot)
+        {
+            RackDevice sourceDevice = sourceSlot.Device;
+            RackDevice targetDevice = targetSlot.Device;
 
+            // Perform the swap/move
+            targetSlot.Device = sourceDevice; // Move source device to target
+            sourceSlot.Device = targetDevice; // Move target device (or null) to source
+
+            // Save the updated state
+            SaveRack();
+        }
         public void ExecuteDropItem(object parameter)
         {
 
@@ -295,7 +683,7 @@ namespace RackMonitor.ViewModels
             if (parameter is DragDropData data && data.SourceSlot != null && data.TargetSlot != null)
             {
                 Debug.WriteLine($"Attempting move from slot {data.SourceSlot.GetHashCode()} to {data.TargetSlot.GetHashCode()}"); // More debug
-                _repository.MoveOrSwapDevice(data.SourceSlot, data.TargetSlot);
+                MoveOrSwapDevice(data.SourceSlot, data.TargetSlot);
             }
             else
             {

@@ -37,6 +37,7 @@ namespace RackMonitor.Models
         }
 
         private bool _isShuttingDown = false;
+        [PropertyVisibility(false)]
         public bool IsShuttingDown
         {
             get => _isShuttingDown;
@@ -66,7 +67,24 @@ namespace RackMonitor.Models
             }
         }
 
+        private bool _useGlobalCredentials = true;
+        [Order(7)]
+        [FriendlyName("Use Global Credentials")]
+        public bool UseGlobalCredentials
+        {
+            get => _useGlobalCredentials;
+            set
+            {
+                if (_useGlobalCredentials != value)
+                {
+                    _useGlobalCredentials = value;
+                    OnPropertyChanged(nameof(UseGlobalCredentials));
+                }
+            }
+        }
+
         private Credentials _pcCredentials = new Credentials("","");
+        [PropertyVisibility(false)]
         public Credentials pcCredentials
         {
             get => _pcCredentials;
