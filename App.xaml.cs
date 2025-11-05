@@ -26,7 +26,7 @@ public partial class App : Application
 
             if (result == true)
             {
-                rackRepository.CreateAndSaveNewRack(newRackWindow.RackName);
+                rackRepository.CreateAndSaveNewRack(newRackWindow.RackName, true);
             }
             else
             {

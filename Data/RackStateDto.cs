@@ -23,6 +23,7 @@ namespace RackMonitor.Data
         public string RackName { get; set; }
         public bool Ping { get; set; }
         public bool WoL { get; set; }
+        public bool Default { get; set; }
         public List<RackUnitDto> Units { get; set; } = new List<RackUnitDto>();
     }
 

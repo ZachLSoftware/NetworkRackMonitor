@@ -30,7 +30,7 @@
                     <Setter Property="Kind" Value="FaceAngryRegular"/>
 
                     <Style.Triggers>
-                        <DataTrigger Binding="{Binding CurrentDevice.IsShuttingDown}" Value="True">
+                        <DataTrigger Binding="{Binding IsComputerShuttingDown}" Value="True">
                             <Setter Property="Visibility" Value="Visible"/>
                             <Setter Property="Kind" Value="CircleNotchSolid"/>
                             <Setter Property="Spin" Value="True"/>
@@ -47,7 +47,7 @@
                         <!-- This is needed if you want to show the FolderRegular icon sometimes -->
                         <MultiDataTrigger>
                             <MultiDataTrigger.Conditions>
-                                <Condition Binding="{Binding CurrentDevice.IsShuttingDown}" Value="False"/>
+                                <Condition Binding="{Binding IsComputerShuttingDown}" Value="False"/>
                                 <Condition Binding="{Binding CurrentDevice.HasStatus}" Value="True"/>
                             </MultiDataTrigger.Conditions>
                             <Setter Property="Visibility" Value="Visible"/>

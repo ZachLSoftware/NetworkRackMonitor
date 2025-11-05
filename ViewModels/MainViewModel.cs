@@ -3,18 +3,22 @@ using RackMonitor.Data;
 using RackMonitor.Models;
 using RackMonitor.Security;
 using RackMonitor.Services;
+using RackMonitor.UserControls.IPControls;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Drawing;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
+
 
 namespace RackMonitor.ViewModels
 {
@@ -22,6 +26,7 @@ namespace RackMonitor.ViewModels
     {
         private readonly RackRepository _repository;
         public ICommand OpenGlobalCredentialsPopupCommand { get; }
+        public ICommand DeleteSelectedRackCommand { get; }
 
         public ICommand SaveCredentialsCommand { get; }
         public ICommand CancelCredentialsCommand { get; }
@@ -29,6 +34,8 @@ namespace RackMonitor.ViewModels
         public ICommand ToggleSettingsPanelCommand { get; }
         public ICommand ToggleWoLServiceCommand { get; }
         public ICommand TogglePingServiceCommand { get; }
+        public ICommand AddNewRackCommand { get; }
+        public ICommand ToggleDefaultCommand { get; }
 
         public EventHandler<PingServiceToggledEventArgs> PingToggled;
         public EventHandler<WoLServiceToggledEventArgs> WoLToggled;
@@ -41,7 +48,7 @@ namespace RackMonitor.ViewModels
         public ICommand MergeUnitCommand { get; }
         // --- END PROXY COMMANDS ---
 
-        public ObservableCollection<RackViewModel> AllRacks = new ObservableCollection<RackViewModel>();
+        public ObservableCollection<RackViewModel> AllRacks { get; set; }
         public List<string> RackNames = new List<string>();
         private int _numberOfUnits = 12;
         public int NumberOfUnits
@@ -164,7 +171,8 @@ namespace RackMonitor.ViewModels
                     AllRacks.Add(new RackViewModel(_repository, rackDto));
                 }
 
-                SelectedRackViewModel = AllRacks.FirstOrDefault();
+                var defaultRack = AllRacks.FirstOrDefault(vm => vm.IsDefault);
+                SelectedRackViewModel = defaultRack ?? AllRacks.FirstOrDefault();
                 IsPingServiceRunning = SelectedRackViewModel?.IsPingServiceRunning ?? false;
                 IsWoLServiceRunning = SelectedRackViewModel?.IsWoLServiceRunning ?? false;
                 NumberOfUnits = SelectedRackViewModel?.NumberOfUnits ?? 12;
@@ -178,6 +186,10 @@ namespace RackMonitor.ViewModels
                 SaveCredentialsCommand = new RelayCommand(ExecuteSaveGlobalCredentials, CanExecuteSaveGlobalCredentials);
                 CancelCredentialsCommand = new RelayCommand(ExecuteCancelGlobalCredentials);
                 ShutdownAllSelectedRackPCsCommand = new RelayCommand(ExecuteShutdownAll);
+                ToggleSettingsPanelCommand = new RelayCommand(ExecuteToggleSettingsPanel);
+                AddNewRackCommand = new RelayCommand(ExecuteAddNewRack);
+                DeleteSelectedRackCommand = new RelayCommand(ExecuteDeleteSelectedRack, CanDeleteSelectedRack);
+                ToggleDefaultCommand = new RelayCommand(ExecuteToggleDefault, CanToggleDefault);
 
                 //proxy commands
                 DropItemCommand = new RelayCommand(ExecuteDropItem, CanExecuteOnSelectedRack);
@@ -225,7 +237,22 @@ namespace RackMonitor.ViewModels
         {
             SelectedRackViewModel?.MergeUnitCommand.Execute(parameter);
         }
+        private void ExecuteToggleSettingsPanel(object parameter)
 
+        {
+
+            IsSettingsPanelOpen = !IsSettingsPanelOpen;
+
+        }
+
+        private bool CanToggleDefault(object parameter)
+        {
+            return SelectedRackViewModel != null;
+        }
+        private bool CanDeleteSelectedRack(object parameter)
+        {
+            return SelectedRackViewModel != null && !SelectedRackViewModel.IsDefault; 
+        }
         private bool CanExecuteSaveGlobalCredentials(object parameter)
         {
             // Same validation logic
@@ -243,6 +270,48 @@ namespace RackMonitor.ViewModels
 
             IsGlobalCredentialsPopupOpen = true;
             OnPropertyChanged(nameof(HasEncryptedPassword)); // Update status
+        }
+
+        private void ExecuteToggleDefault(object parameter)
+        {
+            if (SelectedRackViewModel != null && SelectedRackViewModel.IsDefault)
+            {
+                var otherDefaults = AllRacks.Where(r => r != SelectedRackViewModel && r.IsDefault).ToList();
+
+                foreach (RackViewModel rvm in otherDefaults)
+                {
+                    rvm.IsDefault = false;
+                }
+            }
+        }
+        private void ExecuteDeleteSelectedRack(object parameter)
+        {
+            if (MessageBox.Show($"This will Delete {SelectedRackViewModel.RackName}. Are you sure?",
+                               "Delete Rack", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.No)
+            {
+                return;
+            }
+        }
+        private void ExecuteAddNewRack(object parameter)
+        {
+            var newRackWindow = new NewRackWindow(RackNames);
+            bool? result = newRackWindow.ShowDialog();
+
+            if (result == true)
+            {
+                var newRack = _repository.CreateAndSaveNewRack(newRackWindow.RackName);
+                if (newRack != null) 
+                { 
+                    AllRacks.Add(new RackViewModel(_repository, newRack));
+                    if (!RackNames.Contains(newRack.RackName)) { RackNames.Add(newRack.RackName); }
+                    OnPropertyChanged(nameof(AllRacks)); 
+                }
+
+            }
+            else
+            {
+                newRackWindow.Close();
+            }
         }
 
         public async void ExecuteShutdownAll(object parameter)

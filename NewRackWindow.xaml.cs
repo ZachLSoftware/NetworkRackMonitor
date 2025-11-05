@@ -18,9 +18,17 @@ namespace RackMonitor
     public partial class NewRackWindow : Window
     {
         public string RackName { get; private set; }
+        public List<string> RackNames { get; set; }
 
         public NewRackWindow()
         {
+            InitializeComponent();
+            RackNameTextBox.Focus();
+        }
+
+        public NewRackWindow(List<string> rackNames)
+        {
+            RackNames = rackNames;
             InitializeComponent();
             RackNameTextBox.Focus();
         }
@@ -38,6 +46,11 @@ namespace RackMonitor
             if (rackName.IndexOfAny(System.IO.Path.GetInvalidFileNameChars()) >= 0)
             {
                 MessageBox.Show("The name contains invalid characters. Please avoid characters like \\ / : * ? \" < > |", "Invalid Name", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            if (RackNames != null && RackNames.Contains(rackName))
+            {
+                MessageBox.Show("Please enter Unique name for the rack.", "Name Required", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 

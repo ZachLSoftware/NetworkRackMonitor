@@ -41,6 +41,20 @@ namespace RackMonitor.ViewModels
             }
         }
 
+        private bool _isDefault = false;
+        public bool IsDefault
+        {
+            get => _isDefault;
+            set
+            {
+                if (value != _isDefault)
+                {
+                    _isDefault = value;
+                    OnPropertyChanged(nameof(IsDefault));
+                    SaveRack();
+                }
+            }
+        }
         private int _numberOfUnits = 12;
         public int NumberOfUnits
         {
@@ -64,6 +78,7 @@ namespace RackMonitor.ViewModels
             {
                 if (_selectedDeviceDetails != value)
                 {
+                    _selectedDeviceDetails?.Cleanup();
                     _selectedDeviceDetails = value;
                     OnPropertyChanged(nameof(SelectedDeviceDetails));
                 }
@@ -162,6 +177,7 @@ namespace RackMonitor.ViewModels
 
             RackUnits = new ObservableCollection<RackUnitViewModel>();
             _RackStateDto = rackStateDto;
+            RackName = rackStateDto.RackName;
             DtoToViewModel();
             NumberOfUnits = RackUnits.Count;
             monitor = new MonitoringService(this);
@@ -192,6 +208,7 @@ namespace RackMonitor.ViewModels
             foreach (var unitDto in _RackStateDto.Units.OrderByDescending(u => u.UnitNumber))
             {
                 var unitVM = new RackUnitViewModel { UnitNumber = unitDto.UnitNumber };
+                
                 foreach (var slotDto in unitDto.Slots)
                 {
                     unitVM.Slots.Add(new SlotViewModel
@@ -201,6 +218,7 @@ namespace RackMonitor.ViewModels
                 }
                 RackUnits.Add(unitVM);
             }
+            IsDefault = _RackStateDto.Default;
         }
         public RackDevice MapDtoToDevice(DeviceDto dto)
         {
@@ -269,7 +287,9 @@ namespace RackMonitor.ViewModels
         public void SaveRack()
         {
             var rackStateDto = new RackStateDto
-            { 
+            {
+                RackName = this.RackName,
+                Default = this.IsDefault,
                 Units = RackUnits.Select(UnitVM => new RackUnitDto
                 {
                     UnitNumber = UnitVM.UnitNumber,

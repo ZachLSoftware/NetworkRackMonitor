@@ -38,7 +38,7 @@
                 <!-- Unit Label -->
                 <TextBlock Text="{Binding Label}" VerticalAlignment="Center" HorizontalAlignment="Center" FontWeight="Bold" Margin="5,0"
                    Foreground="{StaticResource TextSecondaryBrush}"
-                   Tag="{Binding DataContext}"
+                   Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}"
                    ContextMenu="{StaticResource RowContextMenu}"/>
 
                 <!-- ItemsControl to display the slots for THIS RackUnitViewModel -->

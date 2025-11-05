@@ -11,6 +11,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 
@@ -48,7 +49,17 @@ namespace RackMonitor.ViewModels
             get => _popupPassword;
             set { _popupPassword = value; OnPropertyChanged(); }
         }
-
+        public bool IsComputerShuttingDown
+        {
+            get
+            {
+                if (CurrentDevice is ComputerDevice cd)
+                {
+                    return cd.IsShuttingDown;
+                }
+                return false;
+            }
+        }
         public ICommand SaveCommand { get; }
         public ICommand ShutdownCommand { get; }
         public ICommand OpenCredentialsPopupCommand { get; }
@@ -291,7 +302,26 @@ namespace RackMonitor.ViewModels
             Saved?.Invoke();
             PopulateProperties(_originalDevice);
         }
+        public void Cleanup()
+        {
+            CurrentDevice.PropertyChanged -= OnCurrentDevicePropertyChanged;
+        }
 
+        private void OnCurrentDevicePropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            switch (e.PropertyName)
+            {
+                case nameof(RackDevice.HasStatus):
+                    OnPropertyChanged(nameof(RackDevice.HasStatus));
+                    break;
+                case nameof(RackDevice.StatusMessage):
+                    OnPropertyChanged(nameof(RackDevice.StatusMessage));
+                    break;
+                case nameof(ComputerDevice.IsShuttingDown): // This name is safe to check
+                    OnPropertyChanged(nameof(IsComputerShuttingDown));
+                    break;
+            }
+        }
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {

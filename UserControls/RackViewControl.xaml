@@ -17,57 +17,18 @@
     </UserControl.Resources>
 
     <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
         <!-- Main Content (Rack View - Column 1) -->
-        <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="2" CornerRadius="5" Background="{StaticResource AppBackgroundBrush}">
+        <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="2" Grid.ColumnSpan="2" CornerRadius="5" Background="{StaticResource AppBackgroundBrush}">
             <!-- Style controls Grid.Column and Grid.ColumnSpan based on BOTH panels -->
-            <Border.Style>
-                <Style TargetType="Border">
-                    <Setter Property="Grid.Column" Value="1"/>
-                    <!-- Default: Middle column -->
-                    <Setter Property="Margin" Value="0"/>
-                    <Style.Triggers>
-                        <!-- Settings Closed, Details Closed -->
-                        <MultiDataTrigger>
-                            <MultiDataTrigger.Conditions>
-                                <Condition Binding="{Binding DataContext.IsSettingsPanelOpen}" Value="False"/>
-                                <Condition Binding="{Binding DataContext.IsDetailsPanelOpen}" Value="False"/>
-                            </MultiDataTrigger.Conditions>
-                            <Setter Property="Grid.Column" Value="0"/>
-                            <Setter Property="Grid.ColumnSpan" Value="3"/>
-                            <Setter Property="Margin" Value="40,0,0,0"/>
-                            <!-- Offset for Open Settings Button -->
-                        </MultiDataTrigger>
-                        <!-- Settings Open, Details Closed -->
-                        <MultiDataTrigger>
-                            <MultiDataTrigger.Conditions>
-                                <Condition Binding="{Binding DataContext.IsSettingsPanelOpen}" Value="True"/>
-                                <Condition Binding="{Binding DataContext.IsDetailsPanelOpen}" Value="False"/>
-                            </MultiDataTrigger.Conditions>
-                            <Setter Property="Grid.Column" Value="1"/>
-                            <Setter Property="Grid.ColumnSpan" Value="2"/>
-                            <!-- Span middle and right -->
-                            <Setter Property="Margin" Value="0"/>
-                        </MultiDataTrigger>
-                        <!-- Settings Closed, Details Open -->
-                        <MultiDataTrigger>
-                            <MultiDataTrigger.Conditions>
-                                <Condition Binding="{Binding DataContext.IsSettingsPanelOpen}" Value="False"/>
-                                <Condition Binding="{Binding DataContext.IsDetailsPanelOpen}" Value="True"/>
-                            </MultiDataTrigger.Conditions>
-                            <Setter Property="Grid.Column" Value="0"/>
-                            <!-- Start at left -->
-                            <Setter Property="Grid.ColumnSpan" Value="2"/>
-                            <!-- Span left and middle -->
-                            <Setter Property="Margin" Value="40,0,0,0"/>
-                            <!-- Offset for Open Settings Button -->
-                        </MultiDataTrigger>
-                        <!-- Settings Open, Details Open (Default Style handles this: Col 1, Span 1) -->
-                    </Style.Triggers>
-                </Style>
-            </Border.Style>
+            
 
             <!-- Internal Grid for Headers + Content -->
             <Grid>
+
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <!-- Row 0: Headers -->
@@ -76,7 +37,7 @@
                 </Grid.RowDefinitions>
 
                 <!-- Headers Grid (Moved from outside) -->
-                <Grid Grid.Row="0" Margin="10,10,10,0">
+                <Grid Grid.Column="0" Grid.Row="0" Margin="10,10,10,0">
                     <!-- ... (Headers Grid Content remains the same) ... -->
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="35"/>
@@ -123,32 +84,16 @@
                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="10,0,10,10">
                     <!-- Changed to Visible -->
                     <ItemsControl  x:Name="MainRackItemsControl" 
-                                   ItemsSource="{Binding SelectedRackViewModel.RackUnits}"
+                                   ItemsSource="{Binding RackUnits}"
                                    ItemTemplate="{StaticResource UnifiedRackUnitTemplate}"/>
                 </ScrollViewer>
             </Grid>
         </Border>
 
         <!-- NEW: Device Details Panel (Column 2) -->
-        <Border Grid.Column="2" BorderBrush="{StaticResource AccentBrush}" BorderThickness="3,0,0,0" Width="400"
+        <Border Grid.Column="1" BorderBrush="{StaticResource AccentBrush}" BorderThickness="3,0,0,0" Width="400"
          Background="{StaticResource PanelBackgroundBrush}">
             <!-- Match settings panel background -->
-            <Border.Style>
-                <Style TargetType="Border">
-                    <Setter Property="Visibility" Value="Collapsed"/>
-                    <!-- Default hidden -->
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding DataContext.IsDetailsPanelOpen}" Value="True">
-                            <Setter Property="Visibility" Value="Visible"/>
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </Border.Style>
-            <!-- Host the UserControl -->
-            <usercontrols:DeviceDetailsView DataContext="{Binding DataContext.SelectedDeviceDetails}"/>
-        </Border>
-        <Border Grid.Column="1" BorderBrush="{StaticResource AccentBrush}" BorderThickness="3,0,0,0" Width="400"
-                 Background="{StaticResource PanelBackgroundBrush}">
             <Border.Style>
                 <Style TargetType="Border">
                     <Setter Property="Visibility" Value="Collapsed"/>
@@ -160,7 +105,7 @@
                     </Style.Triggers>
                 </Style>
             </Border.Style>
-
+            <!-- Host the UserControl -->
             <usercontrols:DeviceDetailsView DataContext="{Binding SelectedDeviceDetails}"/>
         </Border>
     </Grid>

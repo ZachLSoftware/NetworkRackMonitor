@@ -18,141 +18,255 @@
             </ControlTemplate>
 
         </ResourceDictionary>
+        
     </Window.Resources>
+    
     <DockPanel Background="{StaticResource PanelBackgroundBrush}">
 
         <!-- Main Layout Grid -->
         <Grid Margin="10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
-                <!-- Column 0: Holds Settings Panel OR Open Button -->
                 <ColumnDefinition Width="*"/>
-                <!-- Column 1: Holds Main Rack Content -->
                 <ColumnDefinition Width="Auto"/>
-                <!-- NEW Column 2: Holds Details Panel -->
             </Grid.ColumnDefinitions>
-            <!-- REMOVED Grid.RowDefinitions -->
 
             <!-- Column 0 Content: A Grid to hold the "Open" button -->
             <Grid Grid.Column="0">
-                <Button Style="{StaticResource OpenSettingsButtonStyle}"/>
-            </Grid>
 
-            <!-- Settings Panel (Column 0) -->
+                <Button Style="{StaticResource OpenSettingsButtonStyle}"/>
+
+            </Grid>
             <Border Grid.Column="0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="2" CornerRadius="5" Background="{StaticResource BorderBrush}" Padding="10" Width="250">
                 <!-- REMOVED Grid.RowSpan="2" -->
                 <Border.Style>
                     <Style TargetType="Border">
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding DataContext.IsSettingsPanelOpen, ElementName=RackWindow}" Value="False">
+                            <!-- 
+                              FIX: Corrected Binding path. 
+                              The DataContext is MainViewModel, so we bind directly to IsSettingsPanelOpen.
+                            -->
+                            <DataTrigger Binding="{Binding IsSettingsPanelOpen}" Value="False">
                                 <Setter Property="Visibility" Value="Collapsed"/>
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
                 </Border.Style>
 
-                <StackPanel>
-                    <!-- ... (Settings Panel Content remains the same) ... -->
-                    <!-- Settings Label and Close Button -->
-                    <Grid>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Settings Label and Close Button (now in Row 0) -->
+                    <Grid Grid.Row="0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" FontSize="30" FontWeight="Bold" Foreground="white">App Settings</TextBlock>
+                        <TextBlock Grid.Column="0" FontSize="30" FontWeight="Bold" Foreground="white" Text="{Binding SelectedRackViewModel.RackName}"/>
                         <Button Grid.Column="1" Style="{StaticResource CloseSettingsButtonStyle}"/>
                     </Grid>
 
-                    <Separator Margin="0,10,0,30" Background="White"/>
-
-                    <!-- settings grid -->
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*"/>
-
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="50" />
-                            <RowDefinition Height="50"/>
-                            <RowDefinition Height="50" />
-                            <RowDefinition Height="Auto" MinHeight="26" />
-                            <RowDefinition Height="Auto" MinHeight="32.96"/>
-                        </Grid.RowDefinitions>
-
-                        <!-- Settings -->
-                        <Label Grid.Column="0" VerticalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}" FontSize="18" Margin="0,0,89,0" Grid.ColumnSpan="2" Height="34">Enable Ping</Label>
-                        <usercontrols:ToggleButton Grid.Column="1" Grid.Row="0" IsOn="{Binding DataContext.IsPingServiceRunning, ElementName=RackWindow, Mode=TwoWay}" HorizontalAlignment="Left" Margin="14,10,0,10" Width="75" Command="{Binding DataContext.TogglePingServiceCommand, ElementName=RackWindow}"/>
-
-                        <Label Grid.Column="0" Grid.Row="1" VerticalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}" FontSize="18" Margin="0,0,89,0" Grid.ColumnSpan="2" Height="34">Wake on Lan</Label>
-                        <usercontrols:ToggleButton Grid.Column="1" Grid.Row="1" IsOn="{Binding DataContext.IsWoLServiceRunning, ElementName=RackWindow, Mode=TwoWay}" Margin="14,10,0,10" HorizontalAlignment="Left" Width="75" Command="{Binding DataContext.ToggleWoLServiceCommand, ElementName=RackWindow}"/>
-
-                        <Label Grid.Column="0" Grid.Row="2" VerticalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}" FontSize="18" Margin="0,0,89,0" Grid.ColumnSpan="2" Height="34"># of Rack U's</Label>
-
-                        <!-- Rack Unit Update -->
-                        <Grid Grid.Column="1" Grid.Row="2" Margin="0,10,0,10" HorizontalAlignment="Center" Width="89">
+                    <Separator Grid.Row="1" Margin="0,10,0,10" Background="White"/>
+                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Padding="0,0,5,0">
+                        <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*"/>
+
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="*"/>
-                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="50" />
+                                <RowDefinition Height="50"/>
+                                <RowDefinition Height="50" />
+                                <RowDefinition Height="50"/>
+                                <RowDefinition Height="Auto" MinHeight="26" />
+                                <RowDefinition Height="Auto" MinHeight="32.96"/>
+                                <RowDefinition Height="Auto"/>
+ 
                             </Grid.RowDefinitions>
 
-                            <TextBox Grid.Column="0" Grid.RowSpan="2"
-                                     Text="{Binding DataContext.NumberOfUnits, ElementName=RackWindow, UpdateSourceTrigger=LostFocus}"
-                                     FontSize="15"
-                                     KeyDown="NumberOfUnits_KeyDown"
-                                     Width="75" Height="35"
-                                     VerticalAlignment="Center" HorizontalAlignment="Center"
-                                     Background="#333" Foreground="White" BorderBrush="#555" CaretBrush="White"/>
-                            <Button Grid.Column="1" Grid.Row="0" Content="▲" Click="Unit_Up_Button_Click" MinHeight="15"/>
-                            <Button Grid.Column="1" Grid.Row="1" Content="▼" Click="Unit_Down_Button_Click" MinHeight="15"/>
+                            <!-- Settings -->
+                            <Label Grid.Column="0" VerticalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}" FontSize="18" Margin="0,0,89,0" Grid.ColumnSpan="2" Height="34">Enable Ping</Label>
+                            
+                            <usercontrols:ToggleButton Grid.Column="1" Grid.Row="0" IsOn="{Binding SelectedRackViewModel.IsPingServiceRunning, Mode=TwoWay}" HorizontalAlignment="Left" Margin="14,10,0,10" Width="75" Command="{Binding TogglePingServiceCommand}"/>
+
+                            <Label Grid.Column="0" Grid.Row="1" VerticalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}" FontSize="18" Margin="0,0,89,0" Grid.ColumnSpan="2" Height="34">Wake on Lan</Label>
+                            <usercontrols:ToggleButton Grid.Column="1" Grid.Row="1" IsOn="{Binding SelectedRackViewModel.IsWoLServiceRunning, Mode=TwoWay}" Margin="14,10,0,10" HorizontalAlignment="Left" Width="75" Command="{Binding ToggleWoLServiceCommand}"/>
+                            <Label Grid.Column="0" Grid.Row="2" VerticalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}" FontSize="18" Margin="0,0,89,0" Grid.ColumnSpan="2" Height="34">Set Default</Label>
+                            <usercontrols:ToggleButton Grid.Column="1" Grid.Row="2" IsOn="{Binding SelectedRackViewModel.IsDefault, Mode=TwoWay}" Margin="14,10,0,10" HorizontalAlignment="Left" Width="75" Command="{Binding ToggleDefaultCommand}">
+                                <usercontrols:ToggleButton.Style>
+                                    <Style TargetType="usercontrols:ToggleButton">
+                                        <Setter Property="IsEnabled" Value="True"/>
+                                        <!-- Default state -->
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedRackViewModel.IsDefault}" Value="True">
+                                                <Setter Property="IsEnabled" Value="False"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </usercontrols:ToggleButton.Style>
+                            </usercontrols:ToggleButton>
+                            
+
+                            <Label Grid.Column="0" Grid.Row="3" VerticalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}" FontSize="18" Margin="0,0,89,0" Grid.ColumnSpan="2" Height="34"># of Rack U's</Label>
+
+                            
+                            <Grid Grid.Column="1" Grid.Row="3" Margin="0,10,0,10" HorizontalAlignment="Center" Width="89">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                
+                                <TextBox Grid.Column="0" Grid.RowSpan="2"
+                                         Text="{Binding SelectedRackViewModel.NumberOfUnits, UpdateSourceTrigger=LostFocus}"
+                                         FontSize="15"
+                                         KeyDown="NumberOfUnits_KeyDown"
+                                         Width="75" Height="35"
+                                         VerticalAlignment="Center" HorizontalAlignment="Center"
+                                         Background="#333" Foreground="White" BorderBrush="#555" CaretBrush="White"/>
+                                <Button Grid.Column="1" Grid.Row="0" Content="▲" Click="Unit_Up_Button_Click" MinHeight="15"/>
+                                <Button Grid.Column="1" Grid.Row="1" Content="▼" Click="Unit_Down_Button_Click" MinHeight="15"/>
+
+                            </Grid>
+                            <Label Grid.Column="1" Grid.Row="4" Foreground="{StaticResource TextPrimaryBrush}" HorizontalAlignment="Left" Margin="41,0,0,0" Width="48">
+                                <Label.Style>
+                                    <Style TargetType="Label">
+                                        <Setter Property="Content" Value="[Unset]"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasEncryptedPassword}" Value="True">
+                                                <Setter Property="Content" Value="[Set]"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Label.Style>
+                            </Label>
+                            <Button Grid.Column="0" Grid.Row="4" x:Name="CredentialsButton" 
+                        Command="{Binding OpenGlobalCredentialsPopupCommand}" HorizontalAlignment="Left" MinWidth="80" 
+                                    Background="{StaticResource AccentBrush}" Foreground="White" BorderThickness="0" Width="105">
+
+                                <StackPanel Orientation="Horizontal">
+                                    <iconPacks:PackIconFontAwesome6 Kind="KeySolid" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                    <TextBlock Text="Set Credentials" />
+                                </StackPanel>
+                            </Button>
+                            <Button Grid.Column="0" Grid.Row="5" x:Name="ShutdownButton" 
+                        Command="{Binding ShutdownAllSelectedRackPCsCommand}" HorizontalAlignment="Left" MinWidth="80" 
+                                    Background="{StaticResource AccentBrush}" Foreground="White" BorderThickness="0" Width="105" Margin="0,10,0,0">
+
+                                <StackPanel Orientation="Horizontal" >
+                                    <iconPacks:PackIconMaterial Kind="Power" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                    <TextBlock Text="Power Off PCs" />
+                                </StackPanel>
+                            </Button>
+                            <Popup IsOpen="{Binding IsGlobalCredentialsPopupOpen}"
+                               Placement="Center"
+                               AllowsTransparency="True"
+                               StaysOpen="True"
+                               PopupAnimation="Fade" Grid.ColumnSpan="2" Margin="0,0,89,20">
+                                <Popup.Effect>
+                                    <DropShadowEffect Color="Black" ShadowDepth="5" BlurRadius="10" Opacity="0.5"/>
+                                </Popup.Effect>
+
+                                <usercontrols:CredentialsInputControl Width="300"/>
+                            </Popup>
+
 
                         </Grid>
-                        <Label Grid.Column="1" Grid.Row="3" Foreground="{StaticResource TextPrimaryBrush}" HorizontalAlignment="Left" Margin="41,0,0,0" Width="48">
-                            <Label.Style>
-                                <Style TargetType="Label">
-                                    <Setter Property="Content" Value="[Unset]"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding HasEncryptedPassword}" Value="True">
-                                            <Setter Property="Content" Value="[Set]"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Label.Style>
-                        </Label>
-                        <Button Grid.Column="0" Grid.Row="3" x:Name="CredentialsButton" 
-                    Command="{Binding OpenGlobalCredentialsPopupCommand}" HorizontalAlignment="Left" MinWidth="80" 
-                    Background="{StaticResource AccentBrush}" Foreground="White" BorderThickness="0" Width="105">
+                    </ScrollViewer>
+                    <StackPanel Grid.Row="3" VerticalAlignment="Bottom">
 
-                            <StackPanel Orientation="Horizontal">
-                                <iconPacks:PackIconFontAwesome6 Kind="KeySolid" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{StaticResource TextSecondaryBrush}"/>
-                                <TextBlock Text="Set Credentials" />
-                            </StackPanel>
-                        </Button>
-                        <Popup IsOpen="{Binding IsGlobalCredentialsPopupOpen}"
-                           Placement="Center"
-                           AllowsTransparency="True"
-                           StaysOpen="True"
-                           PopupAnimation="Fade" Grid.ColumnSpan="2" Margin="0,0,89,20">
-                            <!-- Add Drop Shadow Effect for visual separation -->
-                            <Popup.Effect>
-                                <DropShadowEffect Color="Black" ShadowDepth="5" BlurRadius="10" Opacity="0.5"/>
-                            </Popup.Effect>
-                            <!-- The Credentials Input UserControl -->
-                            <usercontrols:CredentialsInputControl Width="300"/>
-                        </Popup>
-                        <Button Grid.Row="4" Command="{Binding ShutdownAllPCsCommand}"  HorizontalAlignment="Left" Margin="0,15,0,0"
-                        Background="{StaticResource AccentBrush}" Foreground="White" BorderThickness="0">Shutdown All</Button>
                         
-                    </Grid>
-                </StackPanel>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="30"/>
+                                <ColumnDefinition Width="30"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Racks" FontSize="24" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,5" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Button Grid.Row="0" Grid.Column="1" Template="{StaticResource PlusMinusTemplate}" Style="{StaticResource PlusMinusStyle}" Command="{Binding AddNewRackCommand}"  HorizontalAlignment="Left" VerticalAlignment="Center"
+                            BorderThickness="0" Content="{iconPacks:FeatherIcons Kind=PlusCircle, Height=25, Width=25}" Background="Transparent" Foreground="{StaticResource TextPrimaryBrush}"/>
+                            <Button Template="{StaticResource PlusMinusTemplate}" Style="{StaticResource PlusMinusStyle}" Grid.Row="0" Grid.Column="2" Command="{Binding DeleteSelectedRackCommand}"  HorizontalAlignment="Left" VerticalAlignment="Center"
+                            BorderThickness="0" Content="{iconPacks:FeatherIcons Kind=MinusCircle, Height=25, Width=25}" Background="Transparent" Foreground="{StaticResource TextPrimaryBrush}"/>
+
+
+                            <Separator Grid.Row="1" Grid.ColumnSpan="3" Margin="0,15,0,10" Background="{StaticResource TextPrimaryBrush}"/>
+                            <ScrollViewer Grid.Row="2" Grid.ColumnSpan="3" VerticalScrollBarVisibility="Auto" MinHeight="100" MaxHeight="250">
+                                <ListBox ItemsSource="{Binding AllRacks}"
+                                         SelectedItem="{Binding SelectedRackViewModel, Mode=TwoWay}"
+                                         DisplayMemberPath="RackName"
+                                         Style="{StaticResource DarkListBoxStyle}"
+                                         ItemContainerStyle="{StaticResource DarkListBoxItemStyle}"
+                                         HorizontalContentAlignment="Stretch"/>
+                            </ScrollViewer>
+                        </Grid>
+                    </StackPanel>
+                </Grid>
             </Border>
 
-
-            <usercontrols:RackViewControl Grid.Column="1"/>
+            <usercontrols:RackViewControl Grid.Column="1" DataContext="{Binding SelectedRackViewModel}">
+                <usercontrols:RackViewControl.Style>
+                    <Style TargetType="usercontrols:RackViewControl">
+                        <Setter Property="Grid.Column" Value="0"/>
+                        <Setter Property="Grid.ColumnSpan" Value="2"/>
+                        <!-- Default: Middle column -->
+                        <Setter Property="Margin" Value="0"/>
+                        <Style.Triggers>
+                            <!-- Settings Closed, Details Closed -->
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding DataContext.IsSettingsPanelOpen, RelativeSource={RelativeSource AncestorType=Window}}" Value="False"/>
+                                    <Condition Binding="{Binding IsDetailsPanelOpen}" Value="False"/>
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="Grid.Column" Value="0"/>
+                                <Setter Property="Grid.ColumnSpan" Value="3"/>
+                                <Setter Property="Margin" Value="40,0,0,0"/>
+                                <!-- Offset for Open Settings Button -->
+                            </MultiDataTrigger>
+                            <!-- Settings Open, Details Closed -->
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding DataContext.IsSettingsPanelOpen, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"/>
+                                    <Condition Binding="{Binding IsDetailsPanelOpen}" Value="False"/>
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="Grid.Column" Value="1"/>
+                                <Setter Property="Grid.ColumnSpan" Value="2"/>
+                                <!-- Span middle and right -->
+                                <Setter Property="Margin" Value="0"/>
+                            </MultiDataTrigger>
+                            <!-- Settings Closed, Details Open -->
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding DataContext.IsSettingsPanelOpen, RelativeSource={RelativeSource AncestorType=Window}}" Value="False"/>
+                                    <Condition Binding="{Binding IsDetailsPanelOpen}" Value="True"/>
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="Grid.Column" Value="0"/>
+                                <!-- Start at left -->
+                                <Setter Property="Grid.ColumnSpan" Value="2"/>
+                                <!-- Span left and middle -->
+                                <Setter Property="Margin" Value="40,0,0,0"/>
+                                <!-- Offset for Open Settings Button -->
+                            </MultiDataTrigger>
+                            <!-- Settings Open, Details Open (Default Style handles this: Col 1, Span 1) -->
+                        </Style.Triggers>
+                    </Style>
+                </usercontrols:RackViewControl.Style>
+            </usercontrols:RackViewControl>
         </Grid>
     </DockPanel>
 </Window>

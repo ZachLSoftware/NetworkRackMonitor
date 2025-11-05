@@ -60,7 +60,7 @@ namespace RackMonitor.Data
             File.WriteAllText(savePath, jsonString);
         }
 
-        public RackStateDto CreateAndSaveNewRack(string rackName)
+        public RackStateDto CreateAndSaveNewRack(string rackName, bool IsFirst=false)
         {
             List<RackUnitDto> units = new List<RackUnitDto>();
             for (int i=12; i>0; i--)
@@ -71,7 +71,8 @@ namespace RackMonitor.Data
             {
                 NumberOfUnits = 12,
                 RackName = rackName,
-                Units = units
+                Units = units,
+                Default = IsFirst,
             };
 
             SaveRack(newDto);

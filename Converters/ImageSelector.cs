@@ -21,7 +21,7 @@ namespace RackMonitor.Converters
         {
             if (values == null || values.Length < 2 || values[0] is not RackDevice device)
             {
-                return DefaultIconPath;
+                return null;
             }
 
             string model = values[1] != DependencyProperty.UnsetValue ? values[1] as string : null;
