@@ -48,7 +48,7 @@ namespace RackMonitor
                 MessageBox.Show("The name contains invalid characters. Please avoid characters like \\ / : * ? \" < > |", "Invalid Name", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
-            if (RackNames != null && RackNames.Contains(rackName))
+            if (RackNames != null && RackNames.Contains(rackName, StringComparer.OrdinalIgnoreCase))
             {
                 MessageBox.Show("Please enter Unique name for the rack.", "Name Required", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;

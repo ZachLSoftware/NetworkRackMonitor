@@ -265,7 +265,9 @@
                     </MultiBinding>
                 </MenuItem.CommandParameter>
             </MenuItem>
+            
         </MenuItem>
+        <MenuItem Header="Delete Device" Command="{Binding PlacementTarget.Tag.SelectedRackViewModel.DeleteDeviceCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
     </ContextMenu>
 
 

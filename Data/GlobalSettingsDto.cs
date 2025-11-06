@@ -8,8 +8,6 @@ namespace RackMonitor.Data
 {
     class GlobalSettingsDto
     {
-        public bool Ping { get; set; }
-        public bool WoL { get; set; }
         public string Username { get; set; }
         public string Password { get; set; }
     }

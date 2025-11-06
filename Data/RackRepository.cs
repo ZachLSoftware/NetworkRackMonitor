@@ -83,6 +83,7 @@ namespace RackMonitor.Data
         public List<RackStateDto> LoadAllRackData()
         {
             List<RackStateDto> rackStateDtos = new List<RackStateDto>();
+            LoadGlobalCredentials();
             string[] files = Directory.GetFiles(saveFolder);
             if (files == null)
             {
@@ -90,6 +91,7 @@ namespace RackMonitor.Data
             }
             foreach (string file in files)
             {
+                if (file.Contains("GlobalSettings")) { continue; }
                 rackStateDtos.Add(LoadState(file));
             }
             return rackStateDtos;
@@ -120,13 +122,23 @@ namespace RackMonitor.Data
 
         }
 
-        public Credentials LoadGlobalCredentials()
+        public void LoadGlobalCredentials()
         {
             string savePath = Path.Combine(saveFolder, "GlobalSettings.json");
+            if (!File.Exists(savePath)) { GlobalCredentials = new Credentials("", ""); }
             string jsonString = File.ReadAllText(savePath);
             GlobalSettingsDto settings = JsonSerializer.Deserialize<GlobalSettingsDto>(jsonString);
-            return new Credentials(settings.Username, settings.Password); 
+            GlobalCredentials = new Credentials(settings.Username, settings.Password); 
 
+        }
+
+        public void DeleteRack(string rackName)
+        {
+            var path = Path.Combine(saveFolder, $"{rackName}.json");
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
         }
 
     }
