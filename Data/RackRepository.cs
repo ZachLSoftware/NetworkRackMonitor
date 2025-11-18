@@ -89,6 +89,7 @@ namespace RackMonitor.Data
             {
                 return rackStateDtos;
             }
+            Debug.WriteLine(saveFolder);
             foreach (string file in files)
             {
                 if (file.Contains("GlobalSettings")) { continue; }
@@ -125,7 +126,7 @@ namespace RackMonitor.Data
         public void LoadGlobalCredentials()
         {
             string savePath = Path.Combine(saveFolder, "GlobalSettings.json");
-            if (!File.Exists(savePath)) { GlobalCredentials = new Credentials("", ""); }
+            if (!File.Exists(savePath)) { GlobalCredentials = new Credentials("", ""); SaveGlobalCredentials(GlobalCredentials);  }
             string jsonString = File.ReadAllText(savePath);
             GlobalSettingsDto settings = JsonSerializer.Deserialize<GlobalSettingsDto>(jsonString);
             GlobalCredentials = new Credentials(settings.Username, settings.Password); 

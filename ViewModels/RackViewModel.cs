@@ -1,5 +1,4 @@
-﻿using Markdig.Extensions.SelfPipeline;
-using RackMonitor.Behaviors;
+﻿using RackMonitor.Behaviors;
 using RackMonitor.Data;
 using RackMonitor.Models;
 using RackMonitor.Security;
@@ -56,6 +55,15 @@ namespace RackMonitor.ViewModels
 
             //Create the initial rack
             //_repository.UpdateRackSize(NumberOfUnits);
+        }
+
+        public void stopMonitoring()
+        {
+            monitor.StopMonitoring();
+        }
+        public void startMonitoring()
+        {
+            monitor.StartMonitoring();
         }
 
         #region data_methods

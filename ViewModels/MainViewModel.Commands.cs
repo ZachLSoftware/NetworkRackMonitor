@@ -263,6 +263,14 @@ namespace RackMonitor.ViewModels
         private void ExecuteTogglePing(object parameter)
         {
             IsPingServiceRunning = !IsPingServiceRunning;
+            if (SelectedRackViewModel.IsPingServiceRunning)
+            {
+                SelectedRackViewModel.startMonitoring();
+            }
+            else
+            {
+                SelectedRackViewModel.stopMonitoring();
+            }
         }
     }
 }

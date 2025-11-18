@@ -1,5 +1,4 @@
-﻿using Microsoft.PowerShell.Commands;
-using RackMonitor.Data;
+﻿using RackMonitor.Data;
 using RackMonitor.Models;
 using RackMonitor.Security;
 using RackMonitor.Services;
